@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.security.audit.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否开启审计支持 .",
+      "defaultValue": true
+    }
+  ]
+}

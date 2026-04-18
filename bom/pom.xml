@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.loncra</groupId>
+    <artifactId>framework-bom</artifactId>
+    <version>3.0.0-SNAPSHOT</version>
+    <name>framework-bom</name>
+    <description>loncra framework Bill of Materials - 统一管理所有依赖版本</description>
+    <packaging>pom</packaging>
+
+    <url>https://github.com/loncra/framework</url>
+
+    <issueManagement>
+        <system>gitee</system>
+        <url>https://github.com/loncra/framework/issues</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <id>xiao-bo-chen</id>
+            <name>maurice.chen</name>
+            <email>maurice.chen@foxmail.com</email>
+            <timezone>+8</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/loncra/framework.git</url>
+        <connection>scm:git:ssh://git@github.com:loncra/framework.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:loncra/framework.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        
+        <!-- 项目版本 -->
+        <loncra.framework.version>3.0.0-SNAPSHOT</loncra.framework.version>
+        
+        <!-- 第三方依赖版本 -->
+        <spring-boot.version>3.5.11</spring-boot.version>
+        <spring-cloud.version>2025.0.1</spring-cloud.version>
+        <spring-cloud-alibaba.version>2025.0.0.0</spring-cloud-alibaba.version>
+        <mybatis-plus.version>3.5.16</mybatis-plus.version>
+        <canal.version>1.1.8</canal.version>
+        <yauaa.version>8.1.0</yauaa.version>
+        <prefixmap.version>2.1.0</prefixmap.version>
+        <commons-text.version>1.15.0</commons-text.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <commons-collections4.version>4.5.0</commons-collections4.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
+        <commons-io.version>2.21.0</commons-io.version>
+        <minio.version>8.5.15</minio.version>
+        <socketio.version>2.0.14</socketio.version>
+        <redisson.version>4.2.0</redisson.version>
+        <bouncy-castle.version>1.83</bouncy-castle.version>
+        <spring-ai.version>1.1.4</spring-ai.version>
+        <google-genai.version>1.47.0</google-genai.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- 引入外部 BOM -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-bom</artifactId>
+                <version>${mybatis-plus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- 第三方依赖 -->
+            <dependency>
+                <groupId>nl.basjes.parse.useragent</groupId>
+                <artifactId>yauaa</artifactId>
+                <version>${yauaa.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>nl.basjes.collections</groupId>
+                <artifactId>prefixmap</artifactId>
+                <version>${prefixmap.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${commons-text.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>commons-lang3</artifactId>
+                        <groupId>org.apache.commons</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${commons-collections4.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.corundumstudio.socketio</groupId>
+                <artifactId>netty-socketio</artifactId>
+                <version>${socketio.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson.version}</version>
+            </dependency>
+
+            <!-- Bouncy Castle - 国密算法支持 -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncy-castle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.otter</groupId>
+                <artifactId>canal.common</artifactId>
+                <version>${canal.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.otter</groupId>
+                <artifactId>canal.protocol</artifactId>
+                <version>${canal.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.otter</groupId>
+                <artifactId>canal.client</artifactId>
+                <version>${canal.version}</version>
+            </dependency>
+
+            <!-- loncra framework 核心模块 -->
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>commons</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>datasource</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <!-- loncra framework starter -->
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-access-crypto</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-alibaba-canal</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-alibaba-nacos</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-allin-pay</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-basic-security</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-captcha</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-citic</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-datasource</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-fasc-openapi</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-idempotent</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-minio</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-mybatis</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-mybatis-plus</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-netty-socketio-api</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-netty-socketio-core</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-spring-security</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-spring-security-core</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-spring-security-oauth2</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-spring-security-redis</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-spring-security-session</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-web-mvc</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-wechat</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <repositories>
+        <repository>
+            <id>nexus-aliyun</id>
+            <name>Nexus public Repository</name>
+            <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>central</id>
+            <name>central Snapshot Repository</name>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <profiles>
+        <profile>
+            <id>sonatype-oss-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-release-plugin</artifactId>
+                        <version>3.1.1</version>
+                        <configuration>
+                            <autoVersionSubmodules>true</autoVersionSubmodules>
+                            <tagNameFormat>@{project.version}.release</tagNameFormat>
+                            <mavenExecutorId>forked-path</mavenExecutorId>
+                            <useReleaseProfile>false</useReleaseProfile>
+                            <localCheckout>true</localCheckout>
+                            <pushChanges>false</pushChanges>
+                        </configuration>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.10.0</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.5</version>
+                        <executions>
+                            <execution>
+                                <id>gpg</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+</project>

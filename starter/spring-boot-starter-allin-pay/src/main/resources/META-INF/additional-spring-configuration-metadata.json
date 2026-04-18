@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.allin-pay.enabled",
+      "type": "java.lang.Boolean",
+      "description": "enabled allin pay support .",
+      "defaultValue": true
+    }
+  ]
+}

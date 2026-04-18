@@ -1,0 +1,3 @@
+io.github.loncra.spring.security.redis.OAuth2RedissonOperationAutoConfiguration
+io.github.loncra.spring.security.redis.RedissonOperationAutoConfiguration
+

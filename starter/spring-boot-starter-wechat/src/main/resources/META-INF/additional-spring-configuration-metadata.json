@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.wechat.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用微信服务自动配置",
+      "defaultValue": true
+    }
+  ]
+}

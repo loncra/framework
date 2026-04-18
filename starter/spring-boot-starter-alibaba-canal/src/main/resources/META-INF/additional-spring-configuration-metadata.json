@@ -1,0 +1,27 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.canal.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否开启 canal 支持.",
+      "defaultValue": true
+    },
+    {
+      "name": "loncra.framework.canal.admin.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否开启 canal admin 支持.",
+      "defaultValue": false
+    },
+    {
+      "name": "loncra.framework.canal.notice.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否开启可通知表注解支持.",
+      "defaultValue": true
+    }
+  ]
+}

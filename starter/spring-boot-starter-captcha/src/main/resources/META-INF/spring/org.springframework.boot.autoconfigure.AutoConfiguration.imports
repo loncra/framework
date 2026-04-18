@@ -1,0 +1,2 @@
+io.github.loncra.framework.captcha.RedissonStorageAutoConfiguration
+io.github.loncra.framework.captcha.CaptchaAutoConfiguration

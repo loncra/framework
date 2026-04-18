@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.mvc.enabled",
+      "type": "java.lang.Boolean",
+      "description": "enabled spring web mvc support .",
+      "defaultValue": true
+    }
+  ]
+}

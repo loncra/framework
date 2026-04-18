@@ -1,0 +1,30 @@
+package io.github.loncra.framework.mybatis.plus.baisc.support;
+
+import com.baomidou.mybatisplus.annotation.TableField;
+import io.github.loncra.framework.commons.enumerate.basic.YesOrNo;
+import io.github.loncra.framework.commons.id.number.LongIdEntity;
+import io.github.loncra.framework.mybatis.plus.baisc.LogicDeleteEntity;
+
+/**
+ * 整形，且带版本号和逻辑删除标识的实体基类
+ *
+ * @author maurice.chen
+ */
+public class LongLogicDeleteEntity extends LongIdEntity implements LogicDeleteEntity<Long> {
+
+    /**
+     * 是否删除标识: {@link YesOrNo#Yes} 已删除， {@link YesOrNo#No} 未删除
+     */
+    @TableField
+    private YesOrNo deleted;
+
+    @Override
+    public YesOrNo getDeleted() {
+        return deleted;
+    }
+
+    @Override
+    public void setDeleted(YesOrNo deleted) {
+        this.deleted = deleted;
+    }
+}

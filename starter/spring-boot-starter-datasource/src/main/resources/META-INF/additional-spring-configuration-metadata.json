@@ -1,0 +1,42 @@
+{
+  "groups": [
+    {
+      "name": "loncra.framework.datasource",
+      "type": "io.github.loncra.framework.datasource.config.DataSourceProperties",
+      "description": "读写分离数据源配置."
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.datasource.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用读写分离数据源.",
+      "defaultValue": true
+    },
+    {
+      "name": "loncra.framework.datasource.master.url",
+      "type": "java.lang.String",
+      "description": "主数据源 URL."
+    },
+    {
+      "name": "loncra.framework.datasource.master.username",
+      "type": "java.lang.String",
+      "description": "主数据源用户名."
+    },
+    {
+      "name": "loncra.framework.datasource.master.password",
+      "type": "java.lang.String",
+      "description": "主数据源密码."
+    },
+    {
+      "name": "loncra.framework.datasource.master.driver-class-name",
+      "type": "java.lang.String",
+      "description": "主数据源驱动类名."
+    },
+    {
+      "name": "loncra.framework.datasource.slaves",
+      "type": "java.util.List",
+      "description": "从数据源配置列表."
+    }
+  ]
+}

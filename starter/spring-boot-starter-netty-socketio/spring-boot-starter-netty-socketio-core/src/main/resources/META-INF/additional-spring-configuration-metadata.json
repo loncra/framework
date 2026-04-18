@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.socketio.client.enabled",
+      "type": "java.lang.Boolean",
+      "description": "enabled netty-socketio client support .",
+      "defaultValue": true
+    }
+  ]
+}

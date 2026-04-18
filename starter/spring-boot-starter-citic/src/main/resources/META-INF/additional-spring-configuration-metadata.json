@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.citic.enabled",
+      "type": "java.lang.Boolean",
+      "description": "enabled citic support .",
+      "defaultValue": true
+    }
+  ]
+}

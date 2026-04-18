@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.authentication.spring-security.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否开启 spring security 支持 .",
+      "defaultValue": true
+    }
+  ]
+}

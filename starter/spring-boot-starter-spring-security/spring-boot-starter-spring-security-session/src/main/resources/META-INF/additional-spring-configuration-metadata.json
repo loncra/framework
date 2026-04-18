@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.authentication.access-token.enable-refresh-access-token",
+      "type": "java.lang.Boolean",
+      "description": "是否开启刷新 access token 接口支持 .",
+      "defaultValue": true
+    }
+  ]
+}

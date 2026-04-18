@@ -1,0 +1,5 @@
+io.github.loncra.framework.spring.security.core.FeignSpringSecurityAutoConfiguration
+io.github.loncra.framework.spring.security.core.SpringSecurityAutoConfiguration
+io.github.loncra.framework.spring.security.core.DefaultWebSecurityAutoConfiguration
+io.github.loncra.framework.spring.security.core.SecurityOperationDataTraceRepositoryAutoConfiguration
+io.github.loncra.framework.spring.security.core.CaptchaExtendAutoConfiguration

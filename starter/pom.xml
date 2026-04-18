@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.loncra.framework</groupId>
+        <artifactId>parent</artifactId>
+        <version>3.0.0-SNAPSHOT</version>
+        <relativePath>../parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>starter</artifactId>
+    <name>starter</name>
+    <description>loncra framework starter</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>spring-boot-starter-access-crypto</module>
+        <module>spring-boot-starter-alibaba-nacos</module>
+        <module>spring-boot-starter-basic-security</module>
+        <module>spring-boot-starter-minio</module>
+        <module>spring-boot-starter-idempotent</module>
+        <module>spring-boot-starter-mybatis</module>
+        <module>spring-boot-starter-mybatis-plus</module>
+        <module>spring-boot-starter-web-mvc</module>
+        <module>spring-boot-starter-spring-security</module>
+        <module>spring-boot-starter-captcha</module>
+        <module>spring-boot-starter-alibaba-canal</module>
+        <module>spring-boot-starter-wechat</module>
+        <module>spring-boot-starter-netty-socketio</module>
+        <module>spring-boot-starter-fasc-openapi</module>
+        <module>spring-boot-starter-citic</module>
+        <module>spring-boot-starter-allin-pay</module>
+        <module>spring-boot-starter-datasource</module>
+    </modules>
+
+</project>

@@ -1,0 +1,49 @@
+mybatis-plus:
+  type-aliases-package: io.github.loncra.framework.mybatis.plus.test.entity
+  configuration:
+    call-setters-on-nulls: on
+    default-enum-type-handler: io.github.loncra.framework.mybatis.handler.NameValueEnumTypeHandler
+  global-config:
+    db-config:
+      id-type: auto
+    banner: off
+
+management:
+  info:
+    env:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+spring:
+  jackson:
+    default-property-inclusion: non_empty
+    time-zone: GMT+8
+    deserialization:
+      fail-on-ignored-properties: false
+    serialization:
+      write-date-timestamps-as-nanoseconds: false
+      write-durations-as-timestamps: true
+      write-dates-as-timestamps: true
+  datasource:
+    url: jdbc:h2:mem:mybatis;INIT=create domain if not exists jsonb as other;MODE=MYSQL;DB_CLOSE_DELAY=-1
+    driverClassName: org.h2.Driver
+    username: root
+    password: qwerty123
+    type: com.zaxxer.hikari.HikariDataSource
+  sql:
+    init:
+      schema-locations: classpath:sql/schema.sql
+      data-locations: classpath:sql/data.sql
+loncra:
+  framework:
+    security:
+      audit:
+        enabled: true
+        type: memory
+    mybatis:
+      plus:
+        crypto:
+          data-aes-crypto-key: E4SR1xovC7fYQXH1s2sPDaYY2GqxaEErZDwgkgSKeNc=

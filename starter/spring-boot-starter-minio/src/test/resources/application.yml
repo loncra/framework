@@ -1,0 +1,13 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+loncra:
+  framework:
+    minio:
+      endpoint: http://127.0.0.1:9000
+      access-key: admin
+      secret-key: Cxb@20160826
+      console-endpoint: http://127.0.0.1:9400

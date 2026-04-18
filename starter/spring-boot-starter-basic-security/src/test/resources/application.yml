@@ -1,0 +1,36 @@
+spring:
+  ssl:
+    bundle:
+      pem:
+        elasticsearch-pem-bundle:
+          truststore:
+            certificate: "classpath:http_ca.crt"
+  aop:
+    proxyTargetClass: true
+  jackson:
+    default-property-inclusion: non_empty
+    time-zone: GMT+8
+    deserialization:
+      fail-on-ignored-properties: false
+    serialization:
+      write-date-timestamps-as-nanoseconds: false
+      write-durations-as-timestamps: true
+      write-dates-as-timestamps: true
+  elasticsearch:
+    uris: https://localhost:9200
+    username: elastic
+    password: Cxb@20160826
+    restclient:
+      ssl:
+        bundle: elasticsearch-pem-bundle
+
+loncra:
+  framework:
+    security:
+      audit:
+        type: elasticsearch
+        storage-position:
+          prefix: ix_test_audit_event
+          spring-expression:
+            - "T(io.github.loncra.framework.commons.DateUtils).dateFormat(#timestamp,'yyyy_MM_dd')"
+            - "T(io.github.loncra.framework.commons.DateUtils).dateFormat(#creationTime,'yyyy_MM_dd')"

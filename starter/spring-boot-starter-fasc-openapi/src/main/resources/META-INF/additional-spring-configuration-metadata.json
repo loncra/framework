@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.fasc.enabled",
+      "type": "java.lang.Boolean",
+      "description": "enabled fasc support .",
+      "defaultValue": true
+    }
+  ]
+}

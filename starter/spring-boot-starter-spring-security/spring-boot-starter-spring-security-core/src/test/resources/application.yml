@@ -1,0 +1,55 @@
+loncra:
+  framework:
+    mybatis:
+      plus:
+        mybatis:
+          plus:
+        crypto:
+          data-aes-crypto-key: E4SR1xovC7fYQXH1s2sPDaYY2GqxaEErZDwgkgSKeNc=
+    security:
+      audit:
+        enabled: true
+        type: memory
+    authentication:
+      captcha-verification:
+        verify-urls:
+          - "/login/**"
+      permit-uri-ant-matchers:
+        - "/login/**"
+        - "/logout/**"
+        - "/actuator/**"
+      ignore-audit-types: AUTHENTICATION_FAILURE,AUTHORIZATION_FAILURE
+      users:
+        - name: feign
+          password: 123456
+          roles: FEIGN
+        - name: simple
+          password: 654321
+          roles: SIMPLE
+      ignore-audit-principals: feign
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+
+management:
+  info:
+    env:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:spring-security;INIT=create domain if not exists jsonb as other;MODE=MYSQL;DB_CLOSE_DELAY=-1
+    driverClassName: org.h2.Driver
+    username: root
+    password: qwerty123
+    type: com.zaxxer.hikari.HikariDataSource
+  sql:
+    init:
+      schema-locations: classpath:sql/schema.sql

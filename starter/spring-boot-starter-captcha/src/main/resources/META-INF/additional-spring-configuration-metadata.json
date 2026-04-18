@@ -1,0 +1,21 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.captcha.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否开启验证码支持 .",
+      "defaultValue": true
+    },
+    {
+      "name": "loncra.framework.captcha.constrooler.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否开启验证码控制器支持 .",
+      "defaultValue": true
+    }
+  ]
+}

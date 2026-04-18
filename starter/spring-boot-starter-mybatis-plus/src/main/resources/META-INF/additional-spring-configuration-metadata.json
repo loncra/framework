@@ -1,0 +1,15 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.mybatis.plus.enabled",
+      "type": "java.lang.Boolean",
+      "description": "enabled mybatis-plus support .",
+      "defaultValue": true
+    }
+  ]
+}

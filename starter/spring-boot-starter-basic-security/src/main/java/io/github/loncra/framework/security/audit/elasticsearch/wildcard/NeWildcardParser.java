@@ -1,0 +1,43 @@
+package io.github.loncra.framework.security.audit.elasticsearch.wildcard;
+
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import io.github.loncra.framework.commons.query.Property;
+import io.github.loncra.framework.commons.query.generator.WildcardParser;
+
+/**
+ * 不等于查询通配符实现
+ *
+ * @author maurice.chen
+ */
+public class NeWildcardParser implements WildcardParser<BoolQuery.Builder> {
+
+    private final static String DEFAULT_WILDCARD_VALUE = "ne";
+
+    private final static String DEFAULT_WILDCARD_NAME = "不等于";
+
+    @Override
+    public void structure(
+            Property property,
+            BoolQuery.Builder queryBuilder
+    ) {
+        Query termQuery = QueryBuilders.term(t -> t.field(property.getFinalPropertyName()).value(property.getValue().toString()));
+        queryBuilder.mustNot(termQuery);
+    }
+
+    @Override
+    public boolean isSupport(String condition) {
+        return DEFAULT_WILDCARD_VALUE.equals(condition);
+    }
+
+    @Override
+    public String getName() {
+        return DEFAULT_WILDCARD_NAME;
+    }
+
+    @Override
+    public String getValue() {
+        return DEFAULT_WILDCARD_VALUE;
+    }
+}
