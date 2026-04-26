@@ -1,15 +1,11 @@
 {
-  "groups": [
-    {
-      "name": "io.github.loncra"
-    }
-  ],
   "properties": [
     {
-      "name": "loncra.framework.authentication.spring-security.enabled",
+      "name": "loncra.framework.authentication.spring.security.enabled",
       "type": "java.lang.Boolean",
-      "description": "是否开启 spring security 支持 .",
-      "defaultValue": true
+      "description": "是否启用本套 Spring Security 自动配置（如 SpringSecurityAutoConfiguration、DefaultWebSecurityAutoConfiguration、FeignSpringSecurityAutoConfiguration 等，具体以 @ConditionalOnProperty 为准）。",
+      "defaultValue": true,
+      "sourceType": "io.github.loncra.framework.spring.security.core.SpringSecurityAutoConfiguration"
     }
   ]
 }

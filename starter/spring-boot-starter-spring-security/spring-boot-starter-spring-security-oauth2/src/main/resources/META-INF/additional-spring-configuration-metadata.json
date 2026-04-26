@@ -1,9 +1,11 @@
 {
-  "groups": [
-    {
-      "name": "io.github.loncra"
-    }
-  ],
   "properties": [
+    {
+      "name": "loncra.framework.authentication.spring.security.oauth2.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用 OAuth2 授权服务器与资源服务器相关自动配置；需 classpath 存在授权服务器相关类。",
+      "defaultValue": true,
+      "sourceType": "io.github.loncra.framework.spring.security.oauth2.OAuth2WebSecurityAutoConfiguration"
+    }
   ]
 }

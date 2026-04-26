@@ -17,6 +17,19 @@ import java.io.IOException;
  */
 public class DeviceResolverRequestFilter extends OncePerRequestFilter implements Ordered {
 
+    /**
+     * 与 {@link org.springframework.boot.web.servlet.FilterRegistrationBean#setOrder} 等保持一致时的排序值
+     */
+    private final int order;
+
+    public DeviceResolverRequestFilter() {
+        this(Ordered.HIGHEST_PRECEDENCE);
+    }
+
+    public DeviceResolverRequestFilter(int order) {
+        this.order = order;
+    }
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -30,6 +43,6 @@ public class DeviceResolverRequestFilter extends OncePerRequestFilter implements
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE;
+        return order;
     }
 }

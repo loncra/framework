@@ -59,7 +59,7 @@ public class IdempotentProperties {
      *
      * @param ignoreClasses 全局忽略的参数类型
      */
-    void setIgnoreClasses(List<Class<?>> ignoreClasses) {
+    public void setIgnoreClasses(List<Class<?>> ignoreClasses) {
         this.ignoreClasses = ignoreClasses;
     }
 

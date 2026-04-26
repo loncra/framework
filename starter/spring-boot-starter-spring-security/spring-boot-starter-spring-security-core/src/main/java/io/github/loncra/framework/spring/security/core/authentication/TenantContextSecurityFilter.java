@@ -41,8 +41,7 @@ public class TenantContextSecurityFilter extends OncePerRequestFilter {
             TenantContextHolder.set(tenantContext);
 
             filterChain.doFilter(request, response);
-        }
-        finally {
+        } finally {
             TenantContextHolder.clear();
         }
     }
@@ -56,9 +55,17 @@ public class TenantContextSecurityFilter extends OncePerRequestFilter {
         if (Objects.isNull(securityContext)) {
             return new SpringSecurityTenantContext();
         }
+
         Authentication authentication = securityContext.getAuthentication();
-        if (Objects.isNull(authentication) || !AuditAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
+        if (Objects.isNull(authentication)) {
             return new SpringSecurityTenantContext();
+        }
+
+        if (!AuditAuthenticationToken.class.isAssignableFrom(authentication.getClass())) {
+            SimpleTenantContext simpleTenantContext = new SimpleTenantContext();
+            simpleTenantContext.setId(authentication.getName());
+            simpleTenantContext.setDetails(CastUtils.convertValue(authentication.getDetails(), CastUtils.MAP_TYPE_REFERENCE));
+            return simpleTenantContext;
         }
 
         AuditAuthenticationToken token = CastUtils.cast(authentication);

@@ -1,15 +1,11 @@
 {
-  "groups": [
-    {
-      "name": "io.github.loncra"
-    }
-  ],
   "properties": [
     {
       "name": "loncra.framework.authentication.access-token.enable-refresh-access-token",
       "type": "java.lang.Boolean",
-      "description": "是否开启刷新 access token 接口支持 .",
-      "defaultValue": true
+      "description": "为 true 时注册用于刷新 access token 的 TokenController；未配置时条件不满足，默认不注册（见 SpringSessionAutoConfiguration）。",
+      "defaultValue": false,
+      "sourceType": "io.github.loncra.framework.spring.security.session.SpringSessionAutoConfiguration"
     }
   ]
 }

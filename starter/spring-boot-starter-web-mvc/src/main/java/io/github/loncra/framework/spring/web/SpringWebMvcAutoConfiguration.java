@@ -40,7 +40,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.web.client.RestTemplate;
@@ -98,14 +97,25 @@ public class SpringWebMvcAutoConfiguration {
     /**
      * 注册设备解析请求过滤器
      *
+     * @param mvcProperties Spring Web MVC 配置（见 {@code enabled-device-filter}、{@code device-filter-order-value}）
+     *
      * @return FilterRegistrationBean 实例
      */
     @Bean
-    public FilterRegistrationBean<DeviceResolverRequestFilter> deviceResolverRequestFilter() {
+    @ConditionalOnProperty(
+            prefix = "loncra.framework.mvc",
+            name = "enabled-device-filter",
+            havingValue = "true",
+            matchIfMissing = true
+    )
+    public FilterRegistrationBean<DeviceResolverRequestFilter> deviceResolverRequestFilter(
+            SpringWebMvcProperties mvcProperties
+    ) {
+        int order = mvcProperties.getDeviceFilterOrderValue();
         FilterRegistrationBean<DeviceResolverRequestFilter> filterRegistrationBean = new FilterRegistrationBean<>();
-        filterRegistrationBean.setFilter(new DeviceResolverRequestFilter());
+        filterRegistrationBean.setFilter(new DeviceResolverRequestFilter(order));
         filterRegistrationBean.addUrlPatterns("/*");
-        filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        filterRegistrationBean.setOrder(order);
         return filterRegistrationBean;
     }
 

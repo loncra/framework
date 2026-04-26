@@ -1,15 +1,11 @@
 {
-  "groups": [
-    {
-      "name": "io.github.loncra"
-    }
-  ],
   "properties": [
     {
-      "name": "loncra.framework.socketio.client.enabled",
+      "name": "loncra.framework.socketio.enabled",
       "type": "java.lang.Boolean",
-      "description": "enabled netty-socketio client support .",
-      "defaultValue": true
+      "description": "是否启用 Socket.IO 自动配置。对应 SocketClientAutoConfiguration 上的 @ConditionalOnProperty(prefix = \"loncra.framework.socketio\", value = \"enabled\", matchIfMissing = true)。此键不是 SocketProperties 的 Java 字段，但可通过同一前缀的 relaxed binding 在 YAML 中配置。",
+      "defaultValue": true,
+      "sourceType": "io.github.loncra.framework.socketio.core.SocketClientAutoConfiguration"
     }
   ]
 }

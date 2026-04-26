@@ -1,15 +1,11 @@
 {
-  "groups": [
-    {
-      "name": "io.github.loncra"
-    }
-  ],
   "properties": [
     {
       "name": "loncra.framework.mvc.enabled",
       "type": "java.lang.Boolean",
-      "description": "enabled spring web mvc support .",
-      "defaultValue": true
+      "description": "是否启用本 starter 的 SpringWebMvcAutoConfiguration（统一 RestResult、错误属性、设备 Filter、ObjectMapper 扩展、默认 RestTemplate 等，具体以 @ConditionalOnProperty 为准）。",
+      "defaultValue": true,
+      "sourceType": "io.github.loncra.framework.spring.web.SpringWebMvcAutoConfiguration"
     }
   ]
 }

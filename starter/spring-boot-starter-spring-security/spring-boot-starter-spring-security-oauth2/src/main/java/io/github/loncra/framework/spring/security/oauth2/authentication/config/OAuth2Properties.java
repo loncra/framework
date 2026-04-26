@@ -11,14 +11,14 @@ import java.util.concurrent.TimeUnit;
  *
  * @author maurice.chen
  */
-@ConfigurationProperties("loncra.framework.authentication.oauth2")
+@ConfigurationProperties("loncra.framework.authentication.spring.security.oauth2")
 public class OAuth2Properties {
 
     /**
-     * 授权缓存配置
+     * 授权在缓存中的命名等；未覆盖 name 时默认使用新 Redis key 前缀，与历史默认前缀可能不同，集群升级请按需配置为旧 name。
      */
     private CacheProperties authorizationCache = CacheProperties.of(
-            "loncra:framework:authentication:oauth2:authorization:",
+            "loncra:framework:authentication:spring:security:oauth2:authorization:",
             TimeProperties.of(5, TimeUnit.MINUTES)
     );
 
