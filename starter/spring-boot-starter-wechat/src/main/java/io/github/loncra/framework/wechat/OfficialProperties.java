@@ -21,6 +21,11 @@ public class OfficialProperties implements Serializable {
     private static final long serialVersionUID = -7783628591893033115L;
 
     /**
+     * 是否注册 {@link io.github.loncra.framework.wechat.service.WechatOfficialService}。未开启时不创建 Bean，避免与仅使用小程序的部署冲突。
+     */
+    private boolean enabled = false;
+
+    /**
      * 公众号账户配置
      */
     private RefreshAccessTokenMetadata accessToken = new RefreshAccessTokenMetadata(
@@ -31,6 +36,14 @@ public class OfficialProperties implements Serializable {
      * 构造函数
      */
     public OfficialProperties() {
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     /**

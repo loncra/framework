@@ -151,7 +151,7 @@ public abstract class AbstractWechatBasicService {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
-        ResponseEntity<Map<String, Object>> result = restTemplate.exchange(
+        ResponseEntity<Map<String, Object>> result = getRestTemplate().exchange(
                 "https://api.weixin.qq.com/cgi-bin/stable_token",
                 HttpMethod.POST,
                 new HttpEntity<>(param, httpHeaders),

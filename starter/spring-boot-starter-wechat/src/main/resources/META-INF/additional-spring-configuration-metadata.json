@@ -1,15 +1,18 @@
 {
-  "groups": [
-    {
-      "name": "io.github.loncra"
-    }
-  ],
   "properties": [
     {
       "name": "loncra.framework.wechat.enabled",
       "type": "java.lang.Boolean",
-      "description": "是否启用微信服务自动配置",
-      "defaultValue": true
+      "description": "是否启用微信自动配置（WechatAppletService 等）。",
+      "defaultValue": true,
+      "sourceType": "io.github.loncra.framework.wechat.WechatAutoConfiguration"
+    },
+    {
+      "name": "loncra.framework.wechat.official.enabled",
+      "type": "java.lang.Boolean",
+      "description": "为 true 时注册 WechatOfficialService（与小程序独立 appid/secret 与 access_token 缓存键）。",
+      "defaultValue": false,
+      "sourceType": "io.github.loncra.framework.wechat.OfficialProperties"
     }
   ]
 }

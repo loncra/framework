@@ -15,8 +15,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -148,6 +154,7 @@ public class WechatAppletService extends AbstractWechatBasicService implements I
      * 创建小程序二维码
      *
      * @param param 参数信息
+     * @return 成功为图片字节；若微信返回 JSON 错误体（如参数非法），会解析并抛 {@link io.github.loncra.framework.commons.exception.ErrorCodeException}
      */
     public byte[] createAppletQrcode(Map<String, Object> param) {
         AccessToken token = getAccessTokenIfCacheNull();
@@ -166,6 +173,93 @@ public class WechatAppletService extends AbstractWechatBasicService implements I
                 }
         );
 
-        return result.getBody();
+        if (!HttpStatus.OK.equals(result.getStatusCode())) {
+            throw new SystemException("getwxacodeunlimit 非 200: " + result.getStatusCode());
+        }
+        byte[] body = result.getBody();
+        if (body == null || body.length == 0) {
+            return body;
+        }
+        if (body[0] == '{' || body[0] == '[') {
+            try {
+                Map<String, Object> err = CastUtils.getObjectMapper().readValue(body, CastUtils.MAP_TYPE_REFERENCE);
+                if (err.containsKey(getWechatConfig().getStatusCodeFieldName())) {
+                    String code = err.get(getWechatConfig().getStatusCodeFieldName()).toString();
+                    if (!getWechatConfig().getSuccessCodeValue().equals(code)) {
+                        throwSystemExceptionIfError(err);
+                    }
+                }
+            }
+            catch (IOException e) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("[创建小程序二维码] 解析 JSON 失败，按图片字节处理", e);
+                }
+            }
+        }
+        return body;
+    }
+
+    /**
+     * 发送订阅消息，请求体字段见
+     * <a href="https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/subscribe-message/api_sendmessage.html">sendMessage</a>
+     */
+    public Map<String, Object> sendSubscribeMessage(Map<String, Object> body) {
+        AccessToken token = getAccessTokenIfCacheNull();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<Map<String, Object>> result = getRestTemplate().exchange(
+                "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" + token.getValue(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                new ParameterizedTypeReference<>() {
+                }
+        );
+        if (isSuccess(result) && result.getBody() != null) {
+            return result.getBody();
+        }
+        throwSystemExceptionIfError(Objects.requireNonNull(result.getBody()));
+        return new LinkedHashMap<>();
+    }
+
+    /**
+     * 获取加密 scheme 码，用于从短信、邮件等打开小程序
+     */
+    public Map<String, Object> generateWxaUrlScheme(Map<String, Object> body) {
+        AccessToken token = getAccessTokenIfCacheNull();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<Map<String, Object>> result = getRestTemplate().exchange(
+                "https://api.weixin.qq.com/wxa/generatescheme?access_token=" + token.getValue(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                new ParameterizedTypeReference<>() {
+                }
+        );
+        if (isSuccess(result) && result.getBody() != null) {
+            return result.getBody();
+        }
+        throwSystemExceptionIfError(Objects.requireNonNull(result.getBody()));
+        return new LinkedHashMap<>();
+    }
+
+    /**
+     * 获取加密 short link，用于 H5/短信等打开小程序
+     */
+    public Map<String, Object> generateWxaUrlLink(Map<String, Object> body) {
+        AccessToken token = getAccessTokenIfCacheNull();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        ResponseEntity<Map<String, Object>> result = getRestTemplate().exchange(
+                "https://api.weixin.qq.com/wxa/generate_urllink?access_token=" + token.getValue(),
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                new ParameterizedTypeReference<>() {
+                }
+        );
+        if (isSuccess(result) && result.getBody() != null) {
+            return result.getBody();
+        }
+        throwSystemExceptionIfError(Objects.requireNonNull(result.getBody()));
+        return new LinkedHashMap<>();
     }
 }

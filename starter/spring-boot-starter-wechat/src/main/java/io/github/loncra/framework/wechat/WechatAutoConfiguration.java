@@ -3,6 +3,7 @@ package io.github.loncra.framework.wechat;
 import io.github.loncra.framework.idempotent.advisor.concurrent.ConcurrentInterceptor;
 import io.github.loncra.framework.idempotent.config.IdempotentAutoConfiguration;
 import io.github.loncra.framework.wechat.service.WechatAppletService;
+import io.github.loncra.framework.wechat.service.WechatOfficialService;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -37,6 +38,19 @@ public class WechatAutoConfiguration {
     ) {
 
         return new WechatAppletService(appletProperties, wechatProperties, concurrentInterceptor);
+    }
+
+    /**
+     * 公众号服务；需显式 {@code loncra.framework.wechat.official.enabled=true} 并配置与小程序隔离的 appid/secret
+     */
+    @Bean
+    @ConditionalOnProperty(prefix = "loncra.framework.wechat.official", name = "enabled", havingValue = "true")
+    public WechatOfficialService wechatOfficialService(
+            OfficialProperties officialProperties,
+            WechatProperties wechatProperties,
+            ConcurrentInterceptor concurrentInterceptor
+    ) {
+        return new WechatOfficialService(officialProperties, wechatProperties, concurrentInterceptor);
     }
 
 }
