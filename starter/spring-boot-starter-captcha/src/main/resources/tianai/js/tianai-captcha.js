@@ -1735,4 +1735,4 @@ class Yt {
     this.fadeIn(r), this.alertTimeout = setTimeout(() => this.fadeOut(r), 3e3), e.executeCode === "200" ? (this.removeLoading(), this.config.success(e)) : (this.config.fail(e), this.config.failRefreshCaptcha && this.generateCaptcha(!1));
   }
 }
-window.TianaiCaptcha = Kt;
+window.TianaiCaptcha = Yt;
