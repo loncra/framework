@@ -158,4 +158,12 @@ public class RedissonCaptchaStorageManager implements CaptchaStorageManager {
     public void deleteCaptcha(InterceptToken interceptToken) {
         getSimpleCaptchaBucket(interceptToken.obtainTokenName()).deleteAsync();
     }
+
+    public CaptchaProperties getCaptchaProperties() {
+        return captchaProperties;
+    }
+
+    public RedissonClient getRedissonClient() {
+        return redissonClient;
+    }
 }
