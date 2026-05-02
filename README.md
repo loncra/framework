@@ -26,7 +26,7 @@
 
 | 路径 | 说明 |
 |------|------|
-| [`parent/pom.xml`](parent/pom.xml) | 聚合父 POM：`groupId`=`io.github.loncra.framework`，当前版本 **`3.0.0-SNAPSHOT`**，统一 Java **21**、Spring Boot 3.x 等 |
+| [`parent/pom.xml`](parent/pom.xml) | 聚合父 POM：`groupId`=`io.github.loncra.framework`，当前版本 **`3.0.1-SNAPSHOT`**，统一 Java **21**、Spring Boot 3.x 等 |
 | [`commons/`](commons/) | 无 Spring 强绑定的通用工具、异常、分页、租户、REST 包装、Jackson 扩展、领域模型等 |
 | [`datasource/`](datasource/) | 无 Spring 绑定的读写分离 `DataSource` 实现（主从路由、从库策略） |
 | [`starter/`](starter/) | 各 `spring-boot-starter-*` 与自动配置 |
@@ -97,7 +97,7 @@
 <dependency>
     <groupId>io.github.loncra.framework</groupId>
     <artifactId>spring-boot-starter-web-mvc</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.0.1-SNAPSHOT</version>
 </dependency>
 ```
 
