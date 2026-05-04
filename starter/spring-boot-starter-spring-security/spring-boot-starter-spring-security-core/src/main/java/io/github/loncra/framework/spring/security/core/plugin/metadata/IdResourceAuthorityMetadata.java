@@ -1,5 +1,6 @@
 package io.github.loncra.framework.spring.security.core.plugin.metadata;
 
+import io.github.loncra.framework.commons.CastUtils;
 import io.github.loncra.framework.commons.id.BasicIdentification;
 import io.github.loncra.framework.security.entity.ResourceAuthority;
 
@@ -11,12 +12,12 @@ import java.util.Objects;
  *
  * @author maurice.chen
  */
-public class IdResourceAuthorityMetadata extends ResourceAuthority implements BasicIdentification<String> {
+public class IdResourceAuthorityMetadata<T> extends ResourceAuthority implements BasicIdentification<T> {
 
     @Serial
     private static final long serialVersionUID = -8157345214033745221L;
 
-    private String id;
+    private T id;
 
     private String applicationName;
 
@@ -28,7 +29,7 @@ public class IdResourceAuthorityMetadata extends ResourceAuthority implements Ba
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        IdResourceAuthorityMetadata that = (IdResourceAuthorityMetadata) o;
+        IdResourceAuthorityMetadata<?> that = CastUtils.cast(o);
         return Objects.equals(id, that.id) && Objects.equals(applicationName, that.applicationName);
     }
 
@@ -38,12 +39,12 @@ public class IdResourceAuthorityMetadata extends ResourceAuthority implements Ba
     }
 
     @Override
-    public String getId() {
+    public T getId() {
         return id;
     }
 
     @Override
-    public void setId(String id) {
+    public void setId(T id) {
         this.id = id;
     }
 
