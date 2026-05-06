@@ -35,11 +35,6 @@ public class ResourceAuthority implements Serializable {
     private String name;
 
     /**
-     * uri 拦截值
-     */
-    private String value;
-
-    /**
      * spring security 资源授权现实
      *
      * @param authority spring security authority 的 name 值
@@ -53,16 +48,13 @@ public class ResourceAuthority implements Serializable {
      *
      * @param authority spring security authority 的 name 值
      * @param name      名称
-     * @param value     uri 拦截值
      */
     public ResourceAuthority(
             String authority,
-            String name,
-            String value
+            String name
     ) {
         this.authority = authority;
         this.name = name;
-        this.value = value;
     }
 
     /**
@@ -87,24 +79,6 @@ public class ResourceAuthority implements Serializable {
      */
     public void setName(String name) {
         this.name = name;
-    }
-
-    /**
-     * 获取拦截值
-     *
-     * @return 拦截值
-     */
-    public String getValue() {
-        return value;
-    }
-
-    /**
-     * 设置拦截值
-     *
-     * @param value 拦截值
-     */
-    public void setValue(String value) {
-        this.value = value;
     }
 
     /**

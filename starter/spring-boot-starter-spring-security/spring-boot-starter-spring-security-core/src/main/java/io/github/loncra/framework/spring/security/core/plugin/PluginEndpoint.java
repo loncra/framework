@@ -11,12 +11,9 @@ import io.github.loncra.framework.security.plugin.PluginInfo;
 import io.github.loncra.framework.security.plugin.TargetObject;
 import io.github.loncra.framework.spring.security.core.authentication.config.PluginProperties;
 import io.github.loncra.framework.spring.web.endpoint.EnumerateEndpoint;
-import io.github.loncra.framework.spring.web.mvc.SpringMvcUtils;
 import jakarta.annotation.PostConstruct;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
@@ -40,18 +37,15 @@ import org.springframework.security.access.expression.method.DefaultMethodSecuri
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.SystemPropertyUtils;
-import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 /**
  * 插件信息终端
@@ -64,6 +58,8 @@ public class PluginEndpoint {
     private final static Logger LOGGER = LoggerFactory.getLogger(PluginEndpoint.class);
 
     public static final String DEFAULT_IS_AUTHENTICATED_METHOD_NAME = "isAuthenticated";
+
+    public static final String PATH_VARIABLE_FILTER = "\\{.*\\}";
 
     public static final String DEFAULT_HAS_ANY_ROLE_METHOD_NAME = "hasAnyRole";
 
@@ -212,7 +208,6 @@ public class PluginEndpoint {
 
         // 循环解析类中的方法
         for (Object target : targetSet) {
-
             if (target instanceof Class<?> classTarget) {
                 Plugin plugin = AnnotationUtils.findAnnotation(classTarget, Plugin.class);
                 if (Objects.isNull(plugin)) {
@@ -224,7 +219,7 @@ public class PluginEndpoint {
                     continue;
                 }
 
-                PluginInfo parent = createPluginInfo(plugin, classTarget);
+                PluginInfo parent = new PluginInfo(plugin);
                 // 如果该 plugin 配置没有 id 值，就直接用类名做 id 值
                 if (StringUtils.isBlank(parent.getId())) {
                     parent.setId(DigestUtils.md5DigestAsHex(classTarget.getName().getBytes(StandardCharsets.UTF_8)));
@@ -280,31 +275,6 @@ public class PluginEndpoint {
         return pluginInfoList;
     }
 
-    public PluginInfo createPluginInfo(
-            Plugin plugin,
-            Class<?> target
-    ) {
-
-        PluginInfo parent = new PluginInfo(plugin);
-
-        // 如果类头存在 RequestMapping 注解，需要将该注解的 value 合并起来
-        RequestMapping mapping = AnnotationUtils.findAnnotation(target, RequestMapping.class);
-        if (mapping != null) {
-            List<String> uri = new ArrayList<>();
-            for (String value : mapping.value()) {
-                // 添加 /** 通配符，作用是为了可能某些需要带参数过来
-                String url = Strings.CS.appendIfMissing(value, SpringMvcUtils.ANT_PATH_MATCH_ALL);
-                // 删除.（逗号）后缀的所有内容，作用是可能有些配置是
-                // 有.html 和 .json的类似配置，但其实一个就够了
-                uri.add(RegExUtils.replacePattern((CharSequence) url, "\\{.*\\}", StringUtils.EMPTY));
-            }
-            parent.setValue(StringUtils.join(uri, CastUtils.COMMA));
-
-        }
-
-        return parent;
-    }
-
     /**
      * 遍历方法级别的 {@link Plugin} 信息，并将值合并的 {@link PluginInfo#getChildren()} 中
      *
@@ -329,12 +299,6 @@ public class PluginEndpoint {
                 continue;
             }
 
-            // 获取请求 url 值
-            List<String> values = getRequestValues(targetObject.getTarget(), method, parent);
-            if (values.isEmpty()) {
-                continue;
-            }
-
             PluginInfo target = new PluginInfo(plugin);
             // 如果方法级别的 plugin 信息没有 id，就用方法名称做 id
             if (StringUtils.isBlank(target.getId())) {
@@ -349,7 +313,6 @@ public class PluginEndpoint {
                 target.setSources(parent.getSources());
             }
 
-            target.setValue(StringUtils.join(values, CastUtils.COMMA));
             List<String> authorize = getSecurityAuthorize(method);
 
             if (!authorize.isEmpty()) {
@@ -449,138 +412,7 @@ public class PluginEndpoint {
         return result;
     }
 
-    /**
-     * 获取多个请求 uri 信息，并用 ，（逗号）分割
-     *
-     * @param target      目标对象
-     * @param targetValue 目标 url 值
-     * @param parent      父类 plugin
-     *
-     * @return 多个请求 uri 信息，并用 ，（逗号）分割
-     */
-    private String getRequestValueString(
-            Object target,
-            String targetValue,
-            PluginInfo parent
-    ) {
 
-        List<String> uri = new ArrayList<>();
-
-        List<String> parentValueList = new LinkedList<>();
-
-        if (StringUtils.isEmpty(StringUtils.trimToEmpty(parent.getValue()))) {
-            if (Method.class.isAssignableFrom(target.getClass()) && StringUtils.isEmpty(parent.getValue())) {
-                Method method = CastUtils.cast(target);
-                RequestMapping requestMapping = AnnotationUtils.findAnnotation(method.getDeclaringClass(), RequestMapping.class);
-                if (Objects.nonNull(requestMapping)) {
-                    parentValueList = Arrays.stream(requestMapping.value()).map(s -> Strings.CS.appendIfMissing(s, AntPathMatcher.DEFAULT_PATH_SEPARATOR)).collect(Collectors.toList());
-                }
-                else {
-                    return Strings.CS.appendIfMissing(targetValue, SpringMvcUtils.ANT_PATH_MATCH_ALL);
-                }
-            }
-            else {
-                return Strings.CS.appendIfMissing(targetValue, SpringMvcUtils.ANT_PATH_MATCH_ALL);
-            }
-        }
-        else if (TargetObject.class.isAssignableFrom(target.getClass())) {
-            TargetObject targetObject = CastUtils.cast(target);
-            if (Method.class.isAssignableFrom(targetObject.getTarget().getClass())) {
-                return Strings.CS.appendIfMissing(targetValue, SpringMvcUtils.ANT_PATH_MATCH_ALL);
-            }
-        }
-
-        if (StringUtils.isNotEmpty(parent.getValue())) {
-            String prefix = Strings.CS.appendIfMissing(Strings.CS.removeEnd(parent.getValue(), "**"), AntPathMatcher.DEFAULT_PATH_SEPARATOR);
-            if (CollectionUtils.isEmpty(parentValueList)) {
-                parentValueList.add(prefix);
-            }
-            else {
-                parentValueList = parentValueList
-                        .stream()
-                        .map(s -> Strings.CS.prependIfMissing(Strings.CS.removeStart(s, AntPathMatcher.DEFAULT_PATH_SEPARATOR), prefix))
-                        .collect(Collectors.toList());
-            }
-        }
-
-        for (String parentValue : parentValueList) {
-            for (String value : StringUtils.split(targetValue)) {
-                String url = Strings.CS.appendIfMissing(parentValue, value + SpringMvcUtils.ANT_PATH_MATCH_ALL);
-                uri.add(RegExUtils.removeAll(url, "\\{.*\\}"));
-            }
-        }
-
-        return StringUtils.join(uri, CastUtils.COMMA);
-    }
-
-    /**
-     * 获取方法名请求值
-     *
-     * @param target 构建目标
-     * @param method 方法
-     * @param parent 父类节点
-     *
-     * @return 请求值集合
-     */
-    private List<String> getRequestValues(
-            Object target,
-            Method method,
-            PluginInfo parent
-    ) {
-
-        // 获取 RequestMapping 的 value 信息
-        List<String> values = new ArrayList<>();
-        // 如果找不到 RequestMapping 注解，什么都不做
-        RequestMapping requestMapping = AnnotationUtils.findAnnotation(method, RequestMapping.class);
-        if (Objects.nonNull(requestMapping)) {
-            values = Arrays.asList(requestMapping.value());
-        }
-
-        // 如果为空值，表示可能是 GetMapping 注解
-        if (CollectionUtils.isEmpty(values)) {
-            // 如果找不到 GetMapping 注解，什么都不做
-            GetMapping annotation = AnnotationUtils.findAnnotation(method, GetMapping.class);
-            if (Objects.nonNull(annotation)) {
-                values = Arrays.asList(annotation.value());
-            }
-        }
-
-        // 如果为空值，表示可能是 PostMapping 注解
-        if (CollectionUtils.isEmpty(values)) {
-            // 如果找不到 PostMapping 注解，什么都不做
-            PostMapping annotation = AnnotationUtils.findAnnotation(method, PostMapping.class);
-            if (Objects.nonNull(annotation)) {
-                values = Arrays.asList(annotation.value());
-            }
-        }
-
-        // 如果为空值，表示可能是 PutMapping 注解
-        if (CollectionUtils.isEmpty(values)) {
-            // 如果找不到 PutMapping 注解，什么都不做
-            PutMapping annotation = AnnotationUtils.findAnnotation(method, PutMapping.class);
-            if (Objects.nonNull(annotation)) {
-                values = Arrays.asList(annotation.value());
-            }
-        }
-
-        // 如果为空值，表示可能是 DeleteMapping 注解
-        if (CollectionUtils.isEmpty(values)) {
-            // 如果找不到 PutMapping 注解，什么都不做
-            DeleteMapping annotation = AnnotationUtils.findAnnotation(method, DeleteMapping.class);
-            if (Objects.nonNull(annotation)) {
-                values = Arrays.asList(annotation.value());
-            }
-        }
-
-        // 如果为空值，表示注解没命名，直接用方法名
-        if (CollectionUtils.isEmpty(values)) {
-            values = Collections.singletonList(method.getName());
-        }
-
-        return values.stream()
-                .map(v -> Objects.isNull(parent) ? v : getRequestValueString(target, v, parent))
-                .collect(Collectors.toList());
-    }
 
     /**
      * 扫描包含 Controller 注解的所有类
