@@ -4,8 +4,10 @@ import io.github.loncra.framework.commons.CastUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * 树形结构工具类，用于树形数据的合并、拆解等操作
@@ -88,19 +90,26 @@ public class TreeUtils {
     public static <P, T> List<Tree<P, T>> buildTree(List<? extends Tree<P, T>> list) {
         List<Tree<P, T>> result = new ArrayList<>();
 
-        list.stream().filter(TreeUtils::isParent).peek(root -> findChildren(root, list)).forEach(result::add);
+        list.stream()
+                .filter(TreeUtils::isParent)
+                .peek(root -> findChildren(root, list))
+                .forEach(result::add);
 
         if (!result.isEmpty()) {
             return result;
         }
 
-        List<Tree<P, T>> children = new ArrayList<>();
+        Set<Tree<P, T>> children = new LinkedHashSet<>();
         List<Tree<P, T>> clone = new ArrayList<>(list);
 
-        list.forEach(root -> list.stream().filter(child -> child.isChildren(root)).forEach(children::add));
+        list.forEach(root -> list.stream()
+                .filter(child -> child.isChildren(root))
+                .forEach(children::add));
 
         clone.removeAll(children);
-        clone.stream().peek(root -> findChildren(root, list)).forEach(result::add);
+        clone.stream()
+                .peek(root -> findChildren(root, list))
+                .forEach(result::add);
 
         return result;
     }
@@ -123,6 +132,7 @@ public class TreeUtils {
                 .filter(e -> !isParent(e))
                 .filter(e -> e.isChildren(parent))
                 .peek(e -> findChildren(e, list))
+                .filter(e -> !parent.getChildren().contains(e))
                 .forEach(e -> parent.getChildren().add(e));
     }
 

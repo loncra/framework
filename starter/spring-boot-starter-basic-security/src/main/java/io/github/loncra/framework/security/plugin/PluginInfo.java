@@ -2,6 +2,7 @@ package io.github.loncra.framework.security.plugin;
 
 import io.github.loncra.framework.commons.CastUtils;
 import io.github.loncra.framework.commons.MetadataUtils;
+import io.github.loncra.framework.commons.id.BasicIdentification;
 import io.github.loncra.framework.commons.tree.Tree;
 import io.github.loncra.framework.security.entity.ResourceAuthority;
 import org.apache.commons.lang3.ArrayUtils;
@@ -9,17 +10,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
 import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 插件信息
  *
  * @author maurice.chen
  */
-public class PluginInfo extends ResourceAuthority implements Tree<String, PluginInfo> {
+public class PluginInfo extends ResourceAuthority implements Tree<String, PluginInfo>, BasicIdentification<String> {
 
     @Serial
     private static final long serialVersionUID = -6354440242310314107L;
@@ -296,5 +294,17 @@ public class PluginInfo extends ResourceAuthority implements Tree<String, Plugin
 
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        PluginInfo that = (PluginInfo) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

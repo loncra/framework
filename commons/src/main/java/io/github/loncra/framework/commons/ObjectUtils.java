@@ -76,31 +76,50 @@ public abstract class ObjectUtils {
                 continue;
             }
             if (value instanceof JSONArray array) {
-                Configuration pathConfig = Configuration.builder()
-                        .options(Option.SUPPRESS_EXCEPTIONS, Option.AS_PATH_LIST)
-                        .build();
-                List<String> paths = JsonPath.using(pathConfig).parse(documentContext.jsonString()).read(property);
-                if (CollectionUtils.isEmpty(paths)) {
-                    continue;
-                }
-                for (String path : paths) {
-                    List<String> values = new LinkedList<>();
-                    for (Object item : array) {
-                        if (Objects.isNull(item)) {
-                            continue;
-                        }
-                        String desensitizeValue = Objects.toString(item, StringUtils.EMPTY);
-                        values.add(DesensitizeSerializer.desensitize(desensitizeValue));
-                    }
-                    documentContext.set(path, values);
-                }
-
+                desensitizeListValue(property, array, documentContext);
             }
             else {
                 documentContext.set(property, DesensitizeSerializer.desensitize(value.toString()));
             }
         }
         return documentContext.json();
+    }
+
+    private static void desensitizeListValue(
+            String property,
+            JSONArray array,
+            DocumentContext documentContext
+    ) {
+        Configuration pathConfig = Configuration.builder()
+                .options(Option.SUPPRESS_EXCEPTIONS, Option.AS_PATH_LIST)
+                .build();
+        List<String> paths = JsonPath.using(pathConfig).parse(documentContext.jsonString()).read(property);
+        if (CollectionUtils.isEmpty(paths)) {
+            return;
+        }
+        if (paths.size() == array.size()) {
+            for(int i = 0; i < paths.size(); i++) {
+                Object item = array.get(i);
+                if (Objects.isNull(item)) {
+                    continue;
+                }
+                String desensitizeValue = Objects.toString(item, StringUtils.EMPTY);
+                documentContext.set(paths.get(i), DesensitizeSerializer.desensitize(desensitizeValue));
+            }
+        }
+        else {
+            for (String path : paths) {
+                List<String> values = new LinkedList<>();
+                for (Object item : array) {
+                    if (Objects.isNull(item)) {
+                        continue;
+                    }
+                    String desensitizeValue = Objects.toString(item, StringUtils.EMPTY);
+                    values.add(DesensitizeSerializer.desensitize(desensitizeValue));
+                }
+                documentContext.set(path, values);
+            }
+        }
     }
 
     /**
