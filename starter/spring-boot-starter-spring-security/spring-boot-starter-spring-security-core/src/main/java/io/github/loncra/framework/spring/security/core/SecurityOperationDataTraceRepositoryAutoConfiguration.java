@@ -3,9 +3,11 @@ package io.github.loncra.framework.spring.security.core;
 import io.github.loncra.framework.mybatis.config.OperationDataTraceProperties;
 import io.github.loncra.framework.mybatis.plus.MybatisPlusAutoConfiguration;
 import io.github.loncra.framework.mybatis.plus.audit.MybatisPlusOperationDataTraceResolver;
+import io.github.loncra.framework.mybatis.resolver.OperationDataTraceRecordResolver;
 import io.github.loncra.framework.spring.security.core.audit.SecurityPrincipalOperationDataTraceResolver;
 import io.github.loncra.framework.spring.security.core.audit.config.ControllerAuditProperties;
 import io.github.loncra.framework.spring.security.core.authentication.config.SecurityPrincipalDataOwnerProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -23,9 +25,14 @@ public class SecurityOperationDataTraceRepositoryAutoConfiguration {
     @Bean
     public SecurityPrincipalOperationDataTraceResolver principalOperationDataTraceRepository(
             OperationDataTraceProperties operationDataTraceProperties,
-            ControllerAuditProperties controllerAuditProperties
+            ControllerAuditProperties controllerAuditProperties,
+            ObjectProvider<OperationDataTraceRecordResolver> operationDataTraceRecordResolvers
     ) {
-        return new SecurityPrincipalOperationDataTraceResolver(operationDataTraceProperties, controllerAuditProperties);
+        return new SecurityPrincipalOperationDataTraceResolver(
+                operationDataTraceProperties,
+                operationDataTraceRecordResolvers.stream().toList(),
+                controllerAuditProperties
+        );
     }
 
 }

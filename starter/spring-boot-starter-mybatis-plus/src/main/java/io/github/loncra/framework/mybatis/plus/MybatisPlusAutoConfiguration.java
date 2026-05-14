@@ -22,6 +22,8 @@ import io.github.loncra.framework.mybatis.plus.interceptor.EncryptInnerIntercept
 import io.github.loncra.framework.mybatis.plus.interceptor.LastModifiedDateInnerInterceptor;
 import io.github.loncra.framework.mybatis.plus.interceptor.tenant.TenantEntityHandler;
 import io.github.loncra.framework.mybatis.plus.tenant.TenantLinePolicy;
+import io.github.loncra.framework.mybatis.resolver.OperationDataTraceRecordResolver;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -69,14 +71,18 @@ public class MybatisPlusAutoConfiguration {
      * 创建 Mybatis-Plus 操作数据追踪解析器 Bean
      *
      * @param operationDataTraceProperties 操作数据追踪配置属性
+     * @param recordResolvers 拦截器集合
      *
      * @return Mybatis-Plus 操作数据追踪解析器实例
      */
     @Bean
     @ConditionalOnMissingBean(OperationDataTraceResolver.class)
     @ConditionalOnProperty(prefix = "loncra.framework.mybatis.operation-data-trace", value = "enabled", matchIfMissing = true)
-    public MybatisPlusOperationDataTraceResolver mybatisPlusOperationDataTraceRepository(OperationDataTraceProperties operationDataTraceProperties) {
-        return new MybatisPlusOperationDataTraceResolver(operationDataTraceProperties);
+    public MybatisPlusOperationDataTraceResolver mybatisPlusOperationDataTraceRepository(
+            OperationDataTraceProperties operationDataTraceProperties,
+            ObjectProvider<OperationDataTraceRecordResolver> recordResolvers
+    ) {
+        return new MybatisPlusOperationDataTraceResolver(operationDataTraceProperties, recordResolvers.stream().toList());
     }
 
     /**

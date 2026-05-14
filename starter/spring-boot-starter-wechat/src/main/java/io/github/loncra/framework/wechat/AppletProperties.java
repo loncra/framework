@@ -32,6 +32,12 @@ public class AppletProperties implements Serializable {
     private String phoneNumberCodeParamName = DEFAULT_PHONE_NUMBER_CODE_PARAM_NAME;
 
     /**
+     * 是否注册 {@link io.github.loncra.framework.wechat.service.WechatAppletService}。未开启时不创建 Bean，避免与仅使用小程序的部署冲突。
+     */
+    private boolean enabled = false;
+
+
+    /**
      * 小程序账户
      */
     private RefreshAccessTokenMetadata accessToken = new RefreshAccessTokenMetadata(
@@ -79,5 +85,13 @@ public class AppletProperties implements Serializable {
      */
     public void setAccessToken(RefreshAccessTokenMetadata accessToken) {
         this.accessToken = accessToken;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

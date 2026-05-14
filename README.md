@@ -45,7 +45,7 @@
 | **幂等与并发** | [`spring-boot-starter-idempotent`](starter/spring-boot-starter-idempotent/README.md)：`@Concurrent`、`@Idempotent` + Redisson |
 | **注册配置中心** | [`spring-boot-starter-alibaba-nacos`](starter/spring-boot-starter-alibaba-nacos/README.md)：`@NacosCronScheduled` 动态 cron；可选 Naming → Spring 事件 |
 | **对象存储** | [`spring-boot-starter-minio`](starter/spring-boot-starter-minio/README.md)：异步 MinIO 模板、Console API、过期删除等 |
-| **持久层** | [`spring-boot-starter-mybatis`](starter/spring-boot-starter-mybatis/README.md)、[`spring-boot-starter-mybatis-plus`](starter/spring-boot-starter-mybatis-plus/README.md) |
+| **持久层** | [`spring-boot-starter-mybatis`](starter/spring-boot-starter-mybatis/README.md)、[`spring-boot-starter-mybatis-plus`](starter/spring-boot-starter-mybatis-plus/README.md)；含写操作留痕与可选 **`OperationDataTraceRecordResolver`**（按表名在生成审计记录前后加工 `submitData` / `record`） |
 | **数据变更** | [`spring-boot-starter-alibaba-canal`](starter/spring-boot-starter-alibaba-canal/README.md)：Canal 订阅与通知链 |
 | **验证码** | [`spring-boot-starter-captcha`](starter/spring-boot-starter-captcha/README.md)：验证码契约 + tianai 实现 |
 | **即时通信** | [`spring-boot-starter-netty-socketio`](starter/spring-boot-starter-netty-socketio/README.md)：聚合 POM；业务依赖 **`-core`**，契约依赖 **`-api`** |
@@ -69,8 +69,8 @@
 | **spring-boot-starter-datasource** | 读写分离 DataSource 自动配置 | [starter/…/README.md](starter/spring-boot-starter-datasource/README.md) |
 | **spring-boot-starter-idempotent** | `@Concurrent` / `@Idempotent` | [starter/…/README.md](starter/spring-boot-starter-idempotent/README.md) |
 | **spring-boot-starter-minio** | MinIO 异步模板与可选 Console / 定时清理 | [starter/…/README.md](starter/spring-boot-starter-minio/README.md) |
-| **spring-boot-starter-mybatis** | MyBatis TypeHandler、JSON 集合拦截、写操作留痕扩展点 | [starter/…/README.md](starter/spring-boot-starter-mybatis/README.md) |
-| **spring-boot-starter-mybatis-plus** | MP 插件链、加密、多租户、审计留痕等 | [starter/…/README.md](starter/spring-boot-starter-mybatis-plus/README.md) |
+| **spring-boot-starter-mybatis** | MyBatis TypeHandler、JSON 集合拦截、写操作留痕与 **`OperationDataTraceRecordResolver` 表级钩子** | [starter/…/README.md](starter/spring-boot-starter-mybatis/README.md) |
+| **spring-boot-starter-mybatis-plus** | MP 插件链、加密、多租户、默认留痕解析器（聚合 `OperationDataTraceRecordResolver`）等 | [starter/…/README.md](starter/spring-boot-starter-mybatis-plus/README.md) |
 | **spring-boot-starter-netty-socketio** | Socket.IO 聚合工程（请依赖 **-core** / **-api**） | [starter/…/README.md](starter/spring-boot-starter-netty-socketio/README.md) |
 | **spring-boot-starter-spring-security** | Spring Security 多子模块封装 | [starter/…/README.md](starter/spring-boot-starter-spring-security/README.md) |
 | **spring-boot-starter-web-mvc** | 统一 REST、错误、设备信息、枚举端点等 | [starter/…/README.md](starter/spring-boot-starter-web-mvc/README.md) |

@@ -8,10 +8,17 @@
       "sourceType": "io.github.loncra.framework.wechat.WechatAutoConfiguration"
     },
     {
+      "name": "loncra.framework.wechat.applet.enabled",
+      "type": "java.lang.Boolean",
+      "description": "为 true 时注册 WechatOfficialService（与小程序独立 appid/secret 与 access_token 缓存键）。",
+      "defaultValue": true,
+      "sourceType": "io.github.loncra.framework.wechat.AppletProperties"
+    },
+    {
       "name": "loncra.framework.wechat.official.enabled",
       "type": "java.lang.Boolean",
       "description": "为 true 时注册 WechatOfficialService（与小程序独立 appid/secret 与 access_token 缓存键）。",
-      "defaultValue": false,
+      "defaultValue": true,
       "sourceType": "io.github.loncra.framework.wechat.OfficialProperties"
     }
   ]

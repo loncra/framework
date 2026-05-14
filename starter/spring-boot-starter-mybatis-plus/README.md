@@ -242,6 +242,7 @@ public class UserEntity {
 - 识别 `INSERT/UPDATE/DELETE` 的实体与条件
 - 尝试提取实体 ID（含 Wrapper 条件中的 ID）
 - 生成 `OperationDataTraceRecord` / `EntityIdOperationDataTraceRecord`
+- 在生成**基础**记录时走 `AbstractOperationDataTraceResolver#createBasicOperationDataTraceRecord`，因而**自动支持**容器中所有 `OperationDataTraceRecordResolver` Bean（`ObjectProvider` 注入列表）：可按**表名**在 `preCreate…` / `postCreate…` 中加工 `submitData` 与 `record`（详见 `spring-boot-starter-mybatis` README《留痕记录扩展》）
 - 封装审计事件并发布：
   - 普通：`IdAuditEvent`
   - 带存储定位：`IdStoragePositioningAuditEvent`
@@ -269,6 +270,8 @@ public class UserEntity {
 ## 4. `MybatisPlusOperationDataTraceResolver`
 
 - `spring-boot-starter-mybatis` 中 `OperationDataTraceResolver` 的默认实现。
+- 默认 Bean（`MybatisPlusAutoConfiguration#mybatisPlusOperationDataTraceRepository`）构造为 `new MybatisPlusOperationDataTraceResolver(properties, recordResolvers.stream().toList())`，会传入**全部** `OperationDataTraceRecordResolver` Bean。
+- 另有一构造 `MybatisPlusOperationDataTraceResolver(properties, applicationEventPublisher)` 继承父类**单参**构造，扩展解析器列表为**空**（旧用法或无须表级钩子时使用）。
 - `createAuditEvent(OperationDataTraceRecord)` 先把 `record` 的 `submitData` / `remark` 放入 `data`，再调用重载 `createAuditEvent(record, data)`，得到**底层**的 `org.springframework.boot.actuate.audit.AuditEvent`（或子类）。
 - `saveOperationDataTraceRecord` 对**每条**记录用**同一** `batchUuid` 再包一层，最后 `ApplicationEventPublisher.publishEvent(new AuditApplicationEvent(...))`（**参见源码 `saveOperationDataTraceRecord` 中分支**）。
 

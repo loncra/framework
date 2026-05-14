@@ -38,7 +38,7 @@ public class NacosAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(NacosCronScheduledListener.class)
-    @ConditionalOnProperty(prefix = "spring.cloud.nacos.config.schedule", value = "enabled", matchIfMissing = true)
+    @ConditionalOnProperty(prefix = "spring.cloud.nacos.config.schedule", value = "enabled", havingValue = "true", matchIfMissing = true)
     public NacosCronScheduledListener nacosCronScheduledListener(NacosConfigManager nacosConfigManager) {
         return new NacosCronScheduledListener(nacosConfigManager);
     }
@@ -53,7 +53,7 @@ public class NacosAutoConfiguration {
      * @return NacosSpringEventManager 实例
      */
     @Bean
-    @ConditionalOnProperty(prefix = "spring.cloud.nacos.discovery.event", value = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "spring.cloud.nacos.discovery.event", value = "enabled", havingValue = "true", matchIfMissing = true)
     public NacosSpringEventManager nacosServiceEventManager(
             NacosServiceManager nacosServiceManager,
             NacosDiscoveryProperties nacosDiscoveryProperties,

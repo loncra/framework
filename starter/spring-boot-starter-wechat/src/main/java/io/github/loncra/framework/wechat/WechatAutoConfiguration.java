@@ -31,6 +31,7 @@ public class WechatAutoConfiguration {
      * @return 微信小程序服务实例
      */
     @Bean
+    @ConditionalOnProperty(prefix = "loncra.framework.wechat.applet", name = "enabled", havingValue = "true")
     public WechatAppletService wechatAppletService(
             AppletProperties appletProperties,
             WechatProperties wechatProperties,
@@ -44,7 +45,7 @@ public class WechatAutoConfiguration {
      * 公众号服务；需显式 {@code loncra.framework.wechat.official.enabled=true} 并配置与小程序隔离的 appid/secret
      */
     @Bean
-    @ConditionalOnProperty(prefix = "loncra.framework.wechat.official", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "loncra.framework.wechat.official", name = "enabled", havingValue = "true", matchIfMissing = true)
     public WechatOfficialService wechatOfficialService(
             OfficialProperties officialProperties,
             WechatProperties wechatProperties,

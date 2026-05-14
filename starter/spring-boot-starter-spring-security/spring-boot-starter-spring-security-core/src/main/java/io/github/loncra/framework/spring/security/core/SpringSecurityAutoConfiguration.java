@@ -83,7 +83,7 @@ public class SpringSecurityAutoConfiguration {
      * @return 控制器审计处理器拦截器实例
      */
     @Bean
-    @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", matchIfMissing = true, havingValue = "true")
     public ControllerAuditHandlerInterceptor controllerAuditHandlerInterceptor(ControllerAuditProperties controllerAuditProperties) {
         return new ControllerAuditHandlerInterceptor(controllerAuditProperties);
     }
@@ -156,7 +156,7 @@ public class SpringSecurityAutoConfiguration {
 
     @Configuration
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-    @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", havingValue = "true", matchIfMissing = true)
     public static class DefaultWebMvcConfigurer implements WebMvcConfigurer {
 
         /**
@@ -186,7 +186,7 @@ public class SpringSecurityAutoConfiguration {
      */
     @Bean
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-    @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", havingValue = "true", matchIfMissing = true)
     public AuditPrincipalPointcutAdvisor auditPrincipalPointcutAdvisor() {
         return new AuditPrincipalPointcutAdvisor(new AuditPrincipalMethodInterceptor());
     }

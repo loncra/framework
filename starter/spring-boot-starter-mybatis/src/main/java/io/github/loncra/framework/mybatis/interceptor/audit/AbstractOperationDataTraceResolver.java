@@ -4,6 +4,7 @@ import io.github.loncra.framework.commons.CastUtils;
 import io.github.loncra.framework.commons.DateUtils;
 import io.github.loncra.framework.mybatis.config.OperationDataTraceProperties;
 import io.github.loncra.framework.mybatis.enumerate.OperationDataType;
+import io.github.loncra.framework.mybatis.resolver.OperationDataTraceRecordResolver;
 import io.github.loncra.framework.security.audit.SpringElStoragePositioningGenerator;
 import io.github.loncra.framework.security.audit.StoragePositioningGenerator;
 import net.sf.jsqlparser.statement.Statement;
@@ -37,16 +38,38 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
     private final OperationDataTraceProperties operationDataTraceProperties;
 
     /**
+     * 解析器集合
+     */
+    private final List<OperationDataTraceRecordResolver> operationDataTraceRecordResolvers;
+
+    /**
      * 存储定位生成器
      */
     private StoragePositioningGenerator storagePositioningGenerator;
 
     /**
-     * 创建一个抽象的操作数据追踪解析器
+     * 便捷构造：无 {@link OperationDataTraceRecordResolver} 时等价于传入空列表。
      *
      * @param operationDataTraceProperties 操作数据追踪配置属性
      */
     public AbstractOperationDataTraceResolver(OperationDataTraceProperties operationDataTraceProperties) {
+        this(operationDataTraceProperties, Collections.emptyList());
+    }
+
+    /**
+     * 创建一个抽象的操作数据追踪解析器
+     *
+     * @param operationDataTraceProperties 操作数据追踪配置属性
+     * @param operationDataTraceRecordResolvers 留痕记录扩展解析器集合（可为空）
+     */
+    public AbstractOperationDataTraceResolver(
+            OperationDataTraceProperties operationDataTraceProperties,
+            List<OperationDataTraceRecordResolver> operationDataTraceRecordResolvers
+    ) {
+        this.operationDataTraceRecordResolvers = Objects.requireNonNullElse(
+                operationDataTraceRecordResolvers,
+                Collections.emptyList()
+        );
         this.operationDataTraceProperties = operationDataTraceProperties;
         if (Objects.nonNull(operationDataTraceProperties.getStoragePosition())) {
             storagePositioningGenerator = new SpringElStoragePositioningGenerator(operationDataTraceProperties.getStoragePosition());
@@ -162,6 +185,7 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
             Statement statement,
             Object parameter
     ) throws Exception {
+
         OperationDataTraceRecord result = createBasicOperationDataTraceRecord(
                 OperationDataType.INSERT,
                 insert.getTable().getName(),
@@ -187,12 +211,23 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
             String target,
             Map<String, Object> submitData
     ) throws UnknownHostException {
+
+        operationDataTraceRecordResolvers.stream()
+                .filter(s -> s.isSupport(target))
+                .findFirst()
+                .ifPresent(r -> r.preCreateOperationDataTraceRecord(type, target, submitData));
+
         OperationDataTraceRecord record = new OperationDataTraceRecord();
         record.setPrincipal(InetAddress.getLocalHost().getHostAddress());
         record.setType(type);
         record.setTarget(target);
         record.setSubmitData(submitData);
         record.setRemark(record.getPrincipal() + StringUtils.SPACE + DateUtils.dateFormat(record.getCreationTime()) + StringUtils.SPACE + record.getType().getName());
+
+        operationDataTraceRecordResolvers.stream()
+                .filter(s -> s.isSupport(target))
+                .findFirst()
+                .ifPresent(r -> r.postCreateOperationDataTraceRecord(record));
 
         return record;
     }
