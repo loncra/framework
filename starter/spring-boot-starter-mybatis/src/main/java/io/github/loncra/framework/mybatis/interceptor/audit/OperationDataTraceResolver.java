@@ -34,4 +34,10 @@ public interface OperationDataTraceResolver {
      */
     void saveOperationDataTraceRecord(List<OperationDataTraceRecord> records) throws Exception;
 
+    /**
+     * 获取操作数据留痕钩子
+     *
+     * @return 操作数据留痕钩子
+     */
+    List<OperationDataTraceRecordHook> getOperationDataTraceRecordHooks();
 }

@@ -13,7 +13,7 @@ import io.github.loncra.framework.mybatis.enumerate.OperationDataType;
 import io.github.loncra.framework.mybatis.interceptor.audit.AbstractOperationDataTraceResolver;
 import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecord;
 import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceResolver;
-import io.github.loncra.framework.mybatis.resolver.OperationDataTraceRecordResolver;
+import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecordHook;
 import io.github.loncra.framework.security.audit.IdAuditEvent;
 import io.github.loncra.framework.security.audit.IdStoragePositioningAuditEvent;
 import io.github.loncra.framework.security.audit.StoragePositioningAuditEvent;
@@ -55,13 +55,13 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
      * 创建一个 Mybatis-Plus 操作数据追踪解析器
      *
      * @param operationDataTraceProperties 操作数据追踪配置属性
-     * @param operationDataTraceRecordResolvers 拦截器集合
+     * @param operationDataTraceRecordHooks 拦截器集合
      */
     public MybatisPlusOperationDataTraceResolver(
             OperationDataTraceProperties operationDataTraceProperties,
-            List<OperationDataTraceRecordResolver> operationDataTraceRecordResolvers
+            List<OperationDataTraceRecordHook> operationDataTraceRecordHooks
     ) {
-        super(operationDataTraceProperties, operationDataTraceRecordResolvers);
+        super(operationDataTraceProperties, operationDataTraceRecordHooks);
     }
 
     /**

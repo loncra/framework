@@ -22,7 +22,7 @@ import io.github.loncra.framework.mybatis.plus.interceptor.EncryptInnerIntercept
 import io.github.loncra.framework.mybatis.plus.interceptor.LastModifiedDateInnerInterceptor;
 import io.github.loncra.framework.mybatis.plus.interceptor.tenant.TenantEntityHandler;
 import io.github.loncra.framework.mybatis.plus.tenant.TenantLinePolicy;
-import io.github.loncra.framework.mybatis.resolver.OperationDataTraceRecordResolver;
+import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecordHook;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -80,7 +80,7 @@ public class MybatisPlusAutoConfiguration {
     @ConditionalOnProperty(prefix = "loncra.framework.mybatis.operation-data-trace", value = "enabled", matchIfMissing = true)
     public MybatisPlusOperationDataTraceResolver mybatisPlusOperationDataTraceRepository(
             OperationDataTraceProperties operationDataTraceProperties,
-            ObjectProvider<OperationDataTraceRecordResolver> recordResolvers
+            ObjectProvider<OperationDataTraceRecordHook> recordResolvers
     ) {
         return new MybatisPlusOperationDataTraceResolver(operationDataTraceProperties, recordResolvers.stream().toList());
     }

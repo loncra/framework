@@ -4,7 +4,6 @@ import io.github.loncra.framework.commons.CastUtils;
 import io.github.loncra.framework.commons.DateUtils;
 import io.github.loncra.framework.mybatis.config.OperationDataTraceProperties;
 import io.github.loncra.framework.mybatis.enumerate.OperationDataType;
-import io.github.loncra.framework.mybatis.resolver.OperationDataTraceRecordResolver;
 import io.github.loncra.framework.security.audit.SpringElStoragePositioningGenerator;
 import io.github.loncra.framework.security.audit.StoragePositioningGenerator;
 import net.sf.jsqlparser.statement.Statement;
@@ -40,7 +39,7 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
     /**
      * 解析器集合
      */
-    private final List<OperationDataTraceRecordResolver> operationDataTraceRecordResolvers;
+    private final List<OperationDataTraceRecordHook> operationDataTraceRecordHooks;
 
     /**
      * 存储定位生成器
@@ -48,7 +47,7 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
     private StoragePositioningGenerator storagePositioningGenerator;
 
     /**
-     * 便捷构造：无 {@link OperationDataTraceRecordResolver} 时等价于传入空列表。
+     * 便捷构造：无 {@link OperationDataTraceRecordHook} 时等价于传入空列表。
      *
      * @param operationDataTraceProperties 操作数据追踪配置属性
      */
@@ -60,14 +59,14 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
      * 创建一个抽象的操作数据追踪解析器
      *
      * @param operationDataTraceProperties 操作数据追踪配置属性
-     * @param operationDataTraceRecordResolvers 留痕记录扩展解析器集合（可为空）
+     * @param operationDataTraceRecordHooks 留痕记录扩展解析器集合（可为空）
      */
     public AbstractOperationDataTraceResolver(
             OperationDataTraceProperties operationDataTraceProperties,
-            List<OperationDataTraceRecordResolver> operationDataTraceRecordResolvers
+            List<OperationDataTraceRecordHook> operationDataTraceRecordHooks
     ) {
-        this.operationDataTraceRecordResolvers = Objects.requireNonNullElse(
-                operationDataTraceRecordResolvers,
+        this.operationDataTraceRecordHooks = Objects.requireNonNullElse(
+                operationDataTraceRecordHooks,
                 Collections.emptyList()
         );
         this.operationDataTraceProperties = operationDataTraceProperties;
@@ -212,7 +211,7 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
             Map<String, Object> submitData
     ) throws UnknownHostException {
 
-        operationDataTraceRecordResolvers.stream()
+        operationDataTraceRecordHooks.stream()
                 .filter(s -> s.isSupport(target))
                 .findFirst()
                 .ifPresent(r -> r.preCreateOperationDataTraceRecord(type, target, submitData));
@@ -224,7 +223,7 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
         record.setSubmitData(submitData);
         record.setRemark(record.getPrincipal() + StringUtils.SPACE + DateUtils.dateFormat(record.getCreationTime()) + StringUtils.SPACE + record.getType().getName());
 
-        operationDataTraceRecordResolvers.stream()
+        operationDataTraceRecordHooks.stream()
                 .filter(s -> s.isSupport(target))
                 .findFirst()
                 .ifPresent(r -> r.postCreateOperationDataTraceRecord(record));
@@ -266,5 +265,10 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
      */
     public DateFormat getDateFormat() {
         return dateFormat;
+    }
+
+    @Override
+    public List<OperationDataTraceRecordHook> getOperationDataTraceRecordHooks() {
+        return operationDataTraceRecordHooks;
     }
 }

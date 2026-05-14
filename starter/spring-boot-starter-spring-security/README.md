@@ -21,7 +21,7 @@
 - **多认证类型可插**：同一套「用户名+密码+类型」的入口，实际找用户、校密码，由**你自己实现的若干小 Service** 分工（类型 SecurityPrincipal 相关）。  
 - **OAuth2 不另搞一套错误格式**：授权端点/Token 端点的成功与失败，尽量走与 core 相同的 **Json…Handler**，避免**同一项目里**两种风格。  
 - **不想抄一整份 Security 配置**：用 **WebSecurityConfigurerAfterAdapter** 这种「在已有链**后面/旁边**加几行」的方式，而不是自己建一个新的 `SecurityFilterChain` 复制粘贴几十行。  
-- **有 Mybatis-Plus 时**：在「有登录用户、且本请求允许留痕」时，用 **SecurityPrincipal 增强版**留痕实现，避免**后台批任务**没有用户却误记审计。此时若使用 core 中的 `SecurityPrincipalOperationDataTraceResolver`，会与 **MP 默认解析器**一样注入全部 **`OperationDataTraceRecordResolver`** Bean，便于在写库留痕前后按表名加工载荷（详见 [`spring-boot-starter-mybatis`](../spring-boot-starter-mybatis/README.md)）。
+- **有 Mybatis-Plus 时**：在「有登录用户、且本请求允许留痕」时，用 **SecurityPrincipal 增强版**留痕实现，避免**后台批任务**没有用户却误记审计。此时若使用 core 中的 `SecurityPrincipalOperationDataTraceResolver`，会与 **MP 默认解析器**一样注入全部 **`OperationDataTraceRecordHook`** Bean（含构建阶段与 `preSave` 保存前回调，详见 [`spring-boot-starter-mybatis`](../spring-boot-starter-mybatis/README.md)）。
 
 ## 3. 主开关与相关条件
 

@@ -13,9 +13,9 @@
 | `JacksonJsonTypeHandler` | 以 **Jackson**（`CastUtils.getObjectMapper()`）读写 JSON 列；`Collection` 时优先把 `NameEnum` / `ValueEnum` 元素**展开**为**可存库**的标量列表再 `writeValueAsString`，否则整体序列化 |
 | `NameValueEnumTypeHandler` | 基于 `ValueEnum` / `NameEnum` 的 DB 值与 Java 枚举互转；读库走 `ValueEnum.ofEnum` / `NameEnum.ofEnum`；写库在 `jdbcType` 为 null 时对标量做字符串或 ordinal 等分支（见源码） |
 | `AbstractJsonCollectionPostInterceptor` / `JacksonJsonCollectionPostInterceptor` | 在 `Executor#query` 返回**之后**，对「JSON 列 → `List`/`Set`」常见的 **`List<Map>` 误当 `List<POJO>`** 问题做二次映射；详见下文《`@JsonCollectionGenericType`：要解决什么问题》 |
-| `OperationDataTraceInterceptor` | 在 `Executor#update` 执行**成功**后：仅当**返回为 `Integer` 且 &gt; 0** 且为 `INSERT`/`UPDATE`/`DELETE` 时，清洗 SQL 字符串后用 **JSqlParser** 建 AST，交给 `OperationDataTraceResolver` 生成/保存 `OperationDataTraceRecord` 列表 |
-| `AbstractOperationDataTraceResolver` | 按 `Insert/Update/Delete` 生成 `OperationDataTraceRecord`：`target`＝表名；`submitData`＝`CastUtils` 将参数转 `Map`；`principal` 缺省为本机 IP；`remark` 为「IP + 时间 + 操作中文名」。若配置 `OperationDataTraceProperties#storagePosition` 则通过 `SpringElStoragePositioningGenerator` 为每条**基础**记录**再**生成**带** `storagePositioning` 的**复制**行。构造可传入 `List<OperationDataTraceRecordResolver>`，或仅 `OperationDataTraceProperties` 单参构造（等价于扩展解析器为**空列表**） |
-| `OperationDataTraceRecordResolver` | **可选扩展**：对匹配的**表名**在生成 `OperationDataTraceRecord` 前后介入：`preCreate…` 可就地修改 `submitData`；`postCreate…` 可在默认 `principal`/`remark` 等写好后再改 `record`。同一表若多个 Bean 均 `isSupport` 为 true，**仅容器注入顺序中第一个**会生效（见 `AbstractOperationDataTraceResolver#createBasicOperationDataTraceRecord` 中两次 `findFirst()`） |
+| `OperationDataTraceInterceptor` | 在 `Executor#update` 执行**成功**后：仅当**返回为 `Integer` 且 &gt; 0** 且为 `INSERT`/`UPDATE`/`DELETE` 时，解析 SQL、生成 `OperationDataTraceRecord` 列表；再按表名对每条记录调用匹配 Hook 的 **`preSaveOperationDataTraceRecord`**，最后 **`saveOperationDataTraceRecord`** |
+| `AbstractOperationDataTraceResolver` | 按 `Insert/Update/Delete` 生成 `OperationDataTraceRecord`：`target`＝表名；`submitData`＝`CastUtils` 将参数转 `Map`；`principal` 缺省为本机 IP；`remark` 为「IP + 时间 + 操作中文名」。若配置 `OperationDataTraceProperties#storagePosition` 则通过 `SpringElStoragePositioningGenerator` 为每条**基础**记录**再**生成**带** `storagePositioning` 的**复制**行。构造可传入 `List<OperationDataTraceRecordHook>`，或仅 `OperationDataTraceProperties` 单参构造（等价于 Hook 列表**为空**） |
+| `OperationDataTraceRecordHook` | **可选扩展**：构建阶段 `preCreate…` / `postCreate…` 对命中表名**各取第一个** Hook（`findFirst`）；**保存前** `preSave…` 在 `OperationDataTraceInterceptor` 里、**写库成功后**且调用 `saveOperationDataTraceRecord` **之前**触发，**同一表**上所有 `isSupport` 为 true 的 Hook **全部**执行，且对同表每条记录各调用一次（见源码分组与 `forEach` 顺序） |
 
 ## 依赖说明
 
@@ -51,8 +51,7 @@
 | --- | --- |
 | `MybatisAutoConfiguration` | 上节 |
 | `config/OperationDataTraceProperties` | 前缀 `loncra.framework.mybatis.operation-data-trace`：`auditPrefixName`、`dateFormat`、`storagePosition`（`StoragePositionProperties` 见 security 模块） |
-| `interceptor/audit` | `OperationDataTraceInterceptor`、`OperationDataTraceResolver`、`AbstractOperationDataTraceResolver`、`OperationDataTraceRecord` |
-| `resolver` | `OperationDataTraceRecordResolver`：留痕记录构建的前后置扩展（见下文《留痕记录扩展》） |
+| `interceptor/audit` | `OperationDataTraceInterceptor`、`OperationDataTraceResolver`、`AbstractOperationDataTraceResolver`、`OperationDataTraceRecord`、`OperationDataTraceRecordHook`（留痕钩子，见下文） |
 | `interceptor/json`、`support` | `AbstractJsonCollectionPostInterceptor`；`JacksonJsonCollectionPostInterceptor` 在 `@Intercepts` 中固定 `Executor#query` 四参签名 |
 | `handler` | `JacksonJsonTypeHandler`、`NameValueEnumTypeHandler` |
 | `enumerate/OperationDataType` | 与 `INSERT`/`UPDATE`/`DELETE` 对应的中文名等，供 `remark` 等使用 |
@@ -64,16 +63,25 @@
 3. 若 `(Integer) result <= 0`，不处理。
 4. 根据 `MappedStatement#getSqlCommandType` 过滤，仅 `INSERT` / `UPDATE` / `DELETE`。
 5. `getBoundSql` 取可执行 SQL，以正则 `REMOVE_ESCAPE_REG`（`\\.|\\n|\\t`）**替换**为**空格**后 `CCJSqlParserUtil.parse`。
-6. 调用 `createOperationDataTraceRecord(mappedStatement, statement, parameter)`；**非**空时 `saveOperationDataTraceRecord`。
+6. 调用 `createOperationDataTraceRecord(mappedStatement, statement, parameter)`。
+7. **非**空时：按 **`target`（表名）** 分组，对所有 **`isSupport(表名)`** 的 `OperationDataTraceRecordHook` 依次调用 **`preSaveOperationDataTraceRecord`**（同表每条记录都会收到钩子回调；多 Hook **全部**参与，与构建阶段 `findFirst` 不同）；再调用 `saveOperationDataTraceRecord(records)`。
 
 `AbstractOperationDataTraceResolver` 对 `Insert/Update/Delete` 仅取 `getTable().getName()` 作为**表名**；`submitData` 为**全参**转 `Map`（复杂 Mapper 入参**结构**以 `CastUtils` 实际行为为准）。`principal` 为 `InetAddress.getLocalHost().getHostAddress()`。若需**用户身份**，应**在子类**覆盖记录构造，或**换用** `MybatisPlusOperationDataTraceResolver`、安全子类增强解析器（见 `spring-boot-starter-spring-security-core` 等模块）。
 
-### 留痕记录扩展：`OperationDataTraceRecordResolver`
+### 留痕记录钩子：`OperationDataTraceRecordHook`
 
-不改动 `OperationDataTraceResolver` 整体流程的前提下，可实现 **`io.github.loncra.framework.mybatis.resolver.OperationDataTraceRecordResolver`** 并注册为 Spring Bean：在 **`createBasicOperationDataTraceRecord`** 内先对命中 `isSupport(表名)` 的扩展调用 **`preCreateOperationDataTraceRecord`（可改 `submitData`）**，再填充 `OperationDataTraceRecord` 默认字段，最后调用 **`postCreateOperationDataTraceRecord`（可改 `remark` / `principal` 等）**。适用于按表裁剪留痕载荷、脱敏、补业务字段等。
+实现 **`io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecordHook`** 并注册为 Spring Bean 即可扩展留痕行为：
 
-- **纯 MyBatis**：自定义 `AbstractOperationDataTraceResolver` 子类时，向父类构造传入 `List<OperationDataTraceRecordResolver>`，或父类**仅**传 `OperationDataTraceProperties`（不使用扩展）。
-- **MyBatis-Plus / Security-Core**：默认 Bean 会通过 `ObjectProvider<OperationDataTraceRecordResolver>` **自动聚合**所有实现，见 `MybatisPlusAutoConfiguration`、`SecurityOperationDataTraceRepositoryAutoConfiguration`。
+| 阶段 | 调用时机 | 与多个 Bean 的关系 |
+|------|----------|-------------------|
+| `preCreateOperationDataTraceRecord` | `AbstractOperationDataTraceResolver#createBasicOperationDataTraceRecord` 内，填充 `OperationDataTraceRecord` 之前 | 对 `submitData` 等**每个方法各自** `findFirst`，同类钩子**至多一个**生效 |
+| `postCreateOperationDataTraceRecord` | 默认字段填完后、进入存储定位复制与 `save` 之前 | 同上 |
+| `preSaveOperationDataTraceRecord` | `OperationDataTraceInterceptor` 中，**数据库 update 已成功**且已生成**完整** `records` 列表后、调用 `saveOperationDataTraceRecord` **之前** | 按表分组后，**所有** `isSupport(表名)` 的 Hook **都会**被执行；对每个 Hook，该表对应的**每条**记录各调一次 |
+
+- **纯 MyBatis**：自定义 `AbstractOperationDataTraceResolver` 子类时，向父类构造传入 `List<OperationDataTraceRecordHook>`，或父类**仅**传 `OperationDataTraceProperties`（无钩子）。
+- **MyBatis-Plus / Security-Core**：默认 Bean 通过 `ObjectProvider<OperationDataTraceRecordHook>` **自动聚合**所有实现，见 `MybatisPlusAutoConfiguration`、`SecurityOperationDataTraceRepositoryAutoConfiguration`；`OperationDataTraceResolver#getOperationDataTraceRecordHooks()` 需供拦截器调用 **`preSave`**（默认由 `AbstractOperationDataTraceResolver` 返回构造时注入的列表）。
+
+不改动 `OperationDataTraceResolver` 主流程的前提下，适用于按表脱敏 `submitData`、改写 `record`、以及在**即将写入审计仓库/发事件前**做最后一轮加工。
 
 ## 配置项速查
 
@@ -146,7 +154,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(OperationDataTraceProperties.class)
 /* @Component
 public class DemoOperationDataTraceResolver extends AbstractOperationDataTraceResolver { ... } */
-// 在 @Component 类中：构造器 super(properties) 或 super(properties, recordResolverList)；实现 save... 中发布 AuditApplicationEvent 或写入你方审计表。
+// 在 @Component 类中：构造器 super(properties) 或 super(properties, hookList)；实现 save... 中发布 AuditApplicationEvent 或写入你方审计表。
 ```
 
 > 上例仅说明**配置属性启用**与**类继承关系**；`IdAuditEvent`、`AuditApplicationEvent` 等**实际**包名与**构造**以你工程中的 `spring-boot-actuate` 与**安全/审计**模块 API 为准；在实现 `saveOperationDataTraceRecord` 时自行选用事件或落库。发布前在 IDE 中**核对 import** 与编译通过。
@@ -162,4 +170,4 @@ public class DemoOperationDataTraceResolver extends AbstractOperationDataTraceRe
 - **JSQLParser** 无法解析的 SQL 会在 `parse` 时**抛错**；复杂 SQL 宜在**自定义** `createOperationDataTraceRecord` 中**兜底**或**关闭** `operation-data-trace.enabled` / **不**提供 Resolver。
 - `REMOVE_ESCAPE_REG` 只去掉反斜杠转义/换行/制表，**不**代表与数据库**最终**执行计划完全一致。
 - **仅**使用本 starter、且使用 `AbstractOperationDataTraceResolver` 时，需在应用侧 **显式** `@EnableConfigurationProperties(OperationDataTraceProperties.class)` 以便构造注入**生效**（mybatis-plus 的自动配置会代你启用**一次**）。
-- 生产环境建议在子类/替代实现中把 `principal` 从**本机 IP** 换为**当前**登录用户，并在落库/审计前对 `submitData` 做**脱敏**（密码、Token 等）；也可通过 **`OperationDataTraceRecordResolver.postCreate…`** 统一改写 `record`（与自定义 `OperationDataTraceResolver` 二选一或组合使用）。
+- 生产环境建议在子类/替代实现中把 `principal` 从**本机 IP** 换为**当前**登录用户，并在落库/审计前对 `submitData` 做**脱敏**（密码、Token 等）；也可通过 **`OperationDataTraceRecordHook.postCreate…`** 或 **`preSave…`** 统一改写 `record`（与自定义 `OperationDataTraceResolver` 组合使用）。

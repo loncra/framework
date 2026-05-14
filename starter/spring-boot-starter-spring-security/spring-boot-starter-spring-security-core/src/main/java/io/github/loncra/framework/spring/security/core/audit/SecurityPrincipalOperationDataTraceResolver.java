@@ -6,7 +6,7 @@ import io.github.loncra.framework.commons.id.number.NumberIdEntity;
 import io.github.loncra.framework.mybatis.config.OperationDataTraceProperties;
 import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecord;
 import io.github.loncra.framework.mybatis.plus.audit.MybatisPlusOperationDataTraceResolver;
-import io.github.loncra.framework.mybatis.resolver.OperationDataTraceRecordResolver;
+import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecordHook;
 import io.github.loncra.framework.security.audit.IdAuditEvent;
 import io.github.loncra.framework.spring.security.core.audit.config.ControllerAuditProperties;
 import io.github.loncra.framework.spring.security.core.authentication.token.AuditAuthenticationToken;
@@ -37,10 +37,10 @@ public class SecurityPrincipalOperationDataTraceResolver extends MybatisPlusOper
 
     public SecurityPrincipalOperationDataTraceResolver(
             OperationDataTraceProperties operationDataTraceProperties,
-            List<OperationDataTraceRecordResolver> operationDataTraceRecordResolvers,
+            List<OperationDataTraceRecordHook> operationDataTraceRecordHooks,
             ControllerAuditProperties controllerAuditProperties
     ) {
-        super(operationDataTraceProperties, operationDataTraceRecordResolvers);
+        super(operationDataTraceProperties, operationDataTraceRecordHooks);
         this.controllerAuditProperties = controllerAuditProperties;
     }
 

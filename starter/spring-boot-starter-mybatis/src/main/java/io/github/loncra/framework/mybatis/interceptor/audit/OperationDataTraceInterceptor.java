@@ -17,6 +17,8 @@ import org.apache.ibatis.plugin.Signature;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 操作数据追踪拦截器
@@ -93,6 +95,14 @@ public class OperationDataTraceInterceptor implements Interceptor {
         List<OperationDataTraceRecord> records = operationDataTraceResolver.createOperationDataTraceRecord(mappedStatement, statement, parameter);
 
         if (CollectionUtils.isNotEmpty(records)) {
+            Map<String, List<OperationDataTraceRecord>> grouping = records.stream()
+                    .collect(Collectors.groupingBy(OperationDataTraceRecord::getTarget));
+            for (Map.Entry<String, List<OperationDataTraceRecord>> entry : grouping.entrySet()) {
+                operationDataTraceResolver.getOperationDataTraceRecordHooks()
+                        .stream()
+                        .filter(s -> s.isSupport(entry.getKey()))
+                        .forEach(s -> entry.getValue().forEach(s::preSaveOperationDataTraceRecord));
+            }
             operationDataTraceResolver.saveOperationDataTraceRecord(records);
         }
 
