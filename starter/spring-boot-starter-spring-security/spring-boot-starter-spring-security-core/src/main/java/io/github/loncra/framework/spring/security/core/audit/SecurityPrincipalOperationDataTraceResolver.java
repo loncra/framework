@@ -100,7 +100,7 @@ public class SecurityPrincipalOperationDataTraceResolver extends MybatisPlusOper
             }
 
             traceRecord.setPrincipal(authenticationToken);
-
+            record.setRemark(authenticationToken.getName() + StringUtils.SPACE + DateUtils.dateFormat(record.getCreationTime()) + StringUtils.SPACE + record.getType().getName());
             result.add(traceRecord);
         }
 
@@ -127,33 +127,9 @@ public class SecurityPrincipalOperationDataTraceResolver extends MybatisPlusOper
         data.put(AuditAuthenticationToken.DETAILS_KEY, details);
         data.put(OPERATION_DATA_TRACE_ATTR_NAME, dataTraceRecordMap);
 
-        //syncControllerAuditEvent(data);
-
         SecurityPrincipalOperationDataTraceRecord newValue = CastUtils.of(dataTraceRecord, SecurityPrincipalOperationDataTraceRecord.class);
         newValue.setPrincipal(authenticationToken.getName());
         return createAuditEvent(newValue, data);
     }
 
-    /*private void syncControllerAuditEvent(Map<String, Object> data) {
-        Optional<HttpServletRequest> optional = SpringMvcUtils.getHttpServletRequest();
-
-        if (optional.isEmpty()) {
-            return ;
-        }
-
-        Object controllerAuditEvent = optional.get().getAttribute(controllerAuditProperties.getAuditEventAttrName());
-        if (Objects.isNull(controllerAuditEvent)) {
-            return ;
-        }
-
-        AuditEvent auditEvent = Casts.cast(controllerAuditEvent);
-
-        Object header = auditEvent.getData().get(controllerAuditProperties.getHeaderKey());
-        Object param = auditEvent.getData().get(controllerAuditProperties.getParamKey());
-        Object body = SpringMvcUtils.getRequestAttribute(RequestBodyAttributeAdviceAdapter.REQUEST_BODY_ATTRIBUTE_NAME);
-
-        data.put(controllerAuditProperties.getHeaderKey(), header);
-        data.put(controllerAuditProperties.getParamKey(), param);
-        data.put(controllerAuditProperties.getBodyKey(), body);
-    }*/
 }
