@@ -100,7 +100,7 @@ public class SecurityPrincipalOperationDataTraceResolver extends MybatisPlusOper
             }
 
             traceRecord.setPrincipal(authenticationToken);
-            record.setRemark(authenticationToken.getName() + StringUtils.SPACE + DateUtils.dateFormat(record.getCreationTime()) + StringUtils.SPACE + record.getType().getName());
+            traceRecord.setRemark(authenticationToken.getName() + StringUtils.SPACE + DateUtils.dateFormat(record.getCreationTime()) + StringUtils.SPACE + record.getType().getName());
             result.add(traceRecord);
         }
 
