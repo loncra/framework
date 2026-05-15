@@ -60,7 +60,6 @@ public class ElasticsearchQueryGenerator implements QueryGenerator<BoolQuery.Bui
     @Override
     public BoolQuery.Builder generate(Map<String, List<Condition>> filterConditionMap) {
         BoolQuery.Builder queryBuilder = QueryBuilders.bool();
-
         for (Map.Entry<String, List<Condition>> entry : filterConditionMap.entrySet()) {
 
             for (Condition c : entry.getValue()) {
@@ -78,15 +77,13 @@ public class ElasticsearchQueryGenerator implements QueryGenerator<BoolQuery.Bui
                     wildcardParser.structure(c.getProperty(), conditionBuilder);
 
                     if (ConditionType.Or.equals(c.getType())) {
-                        queryBuilder.should(conditionBuilder.build());
+                        queryBuilder.should(conditionBuilder.build()).minimumShouldMatch("1");
                     }
                     else {
                         queryBuilder.must(conditionBuilder.build());
                     }
                 }
             }
-
-            //queryBuilder.must(mustBuilder.build());
         }
 
         return queryBuilder;
