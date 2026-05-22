@@ -3,6 +3,8 @@ package io.github.loncra.framework.commons.minio;
 import org.springframework.util.DigestUtils;
 
 import java.io.Serial;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 对象写入成功后的结果集
@@ -28,6 +30,17 @@ public class ObjectWriteResult extends FileObject {
      * minio e 标签
      */
     private String etag;
+
+
+    /**
+     * 文件大小
+     */
+    private long size;
+
+    /**
+     * 设置信息
+     */
+    private Map<String, Object> setting = new LinkedHashMap<>();
 
     /**
      * 构造函数
@@ -148,5 +161,21 @@ public class ObjectWriteResult extends FileObject {
      */
     public String getId() {
         return DigestUtils.md5DigestAsHex((getBucketName() + getObjectName()).getBytes());
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public Map<String, Object> getSetting() {
+        return setting;
+    }
+
+    public void setSetting(Map<String, Object> setting) {
+        this.setting = setting;
     }
 }

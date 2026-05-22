@@ -18,9 +18,11 @@ import net.sf.jsqlparser.statement.Statement;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.springframework.boot.actuate.audit.AuditEvent;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
 
 import java.util.*;
 
@@ -122,7 +124,21 @@ public class SecurityPrincipalOperationDataTraceResolver extends MybatisPlusOper
 
         Map<String, Object> data = new LinkedHashMap<>();
 
-        AuditAuthenticationSuccessDetails details = CastUtils.cast(authenticationToken.getDetails());
+        AuditAuthenticationSuccessDetails successDetails = CastUtils.cast(authenticationToken.getDetails());
+        Object requestDetails = null;
+        Optional<HttpServletRequest> optional = SpringMvcUtils.getHttpServletRequest();
+        if (optional.isPresent()) {
+            HttpServletRequest request = optional.get();
+            requestDetails = new WebAuthenticationDetails(request);
+
+            ServletServerHttpRequest servletServerHttpRequest = new ServletServerHttpRequest(request);
+            data.put(ControllerAuditProperties.DEFAULT_HEADER_KEY, servletServerHttpRequest.getHeaders());
+        }
+        AuditAuthenticationSuccessDetails temp = new AuditAuthenticationSuccessDetails(
+                requestDetails,
+                successDetails.getMetadata()
+        );
+        AuditAuthenticationSuccessDetails details = CastUtils.cast(temp);
 
         data.put(AuditAuthenticationToken.DETAILS_KEY, details);
         data.put(OPERATION_DATA_TRACE_ATTR_NAME, dataTraceRecordMap);

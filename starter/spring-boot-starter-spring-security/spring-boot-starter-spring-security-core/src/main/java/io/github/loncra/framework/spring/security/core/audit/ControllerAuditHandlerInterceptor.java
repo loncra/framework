@@ -5,6 +5,7 @@ import io.github.loncra.framework.security.audit.Auditable;
 import io.github.loncra.framework.security.plugin.Plugin;
 import io.github.loncra.framework.spring.security.core.audit.config.ControllerAuditProperties;
 import io.github.loncra.framework.spring.security.core.authentication.token.AuditAuthenticationToken;
+import io.github.loncra.framework.spring.security.core.entity.AuditAuthenticationSuccessDetails;
 import io.github.loncra.framework.spring.web.mvc.SpringMvcUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +19,8 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.AsyncHandlerInterceptor;
 
@@ -97,7 +100,12 @@ public class ControllerAuditHandlerInterceptor implements ApplicationEventPublis
             AuditEvent auditEvent;
             if (AuditAuthenticationToken.class.isAssignableFrom(principal.getClass())) {
                 AuditAuthenticationToken authenticationToken = CastUtils.cast(principal);
-                data.put(AuditAuthenticationToken.DETAILS_KEY, authenticationToken.getDetails());
+                AuditAuthenticationSuccessDetails successDetails = CastUtils.cast(authenticationToken.getDetails());
+                AuditAuthenticationSuccessDetails temp = new AuditAuthenticationSuccessDetails(
+                        new WebAuthenticationDetails(request),
+                        successDetails.getMetadata()
+                );
+                data.put(AuditAuthenticationToken.DETAILS_KEY, temp);
 
                 auditEvent = new AuditEvent(Instant.now(), authenticationToken.getName(), type, data);
             }

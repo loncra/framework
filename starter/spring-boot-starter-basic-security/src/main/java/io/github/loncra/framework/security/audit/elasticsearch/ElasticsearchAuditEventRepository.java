@@ -209,7 +209,7 @@ public class ElasticsearchAuditEventRepository extends AbstractExtendAuditEventR
 
         BoolQuery.Builder queryBuilder = elasticsearchQueryGenerator.createQueryWrapperFromMap(query);
         if (Objects.nonNull(after)) {
-            queryBuilder = queryBuilder.must(m -> m.range(r -> r.term(d -> d.field(RestResult.DEFAULT_TIMESTAMP_NAME).gte(String.valueOf(after.getEpochSecond())))));
+            queryBuilder = queryBuilder.must(m -> m.range(r -> r.term(d -> d.field(RestResult.DEFAULT_TIMESTAMP_NAME).gte(CastUtils.convertValue(after, String.class)))));
         }
 
         return queryBuilder;
