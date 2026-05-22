@@ -92,7 +92,7 @@ public class PluginInfo extends ResourceAuthority implements Tree<String, Plugin
     /**
      * 元数据信息
      */
-    private Map<String, String> metadata;
+    private Map<String, Object> metadata;
 
     /**
      * 备注
@@ -140,7 +140,7 @@ public class PluginInfo extends ResourceAuthority implements Tree<String, Plugin
             this.setAuthority(StringUtils.join(plugin.authority(), CastUtils.COMMA));
         }
         if (ArrayUtils.isNotEmpty(plugin.metadata())) {
-            Map<String, String> metadata = MetadataUtils.toMap(plugin.metadata());
+            Map<String, Object> metadata = MetadataUtils.toMap(plugin.metadata());
             this.setMetadata(metadata);
         }
     }
@@ -288,11 +288,11 @@ public class PluginInfo extends ResourceAuthority implements Tree<String, Plugin
         return Strings.CS.equals(pluginInfo.getId(), this.parent);
     }
 
-    public Map<String, String> getMetadata() {
+    public Map<String, Object> getMetadata() {
         return metadata;
     }
 
-    public void setMetadata(Map<String, String> metadata) {
+    public void setMetadata(Map<String, Object> metadata) {
         this.metadata = metadata;
     }
 

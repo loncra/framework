@@ -17,6 +17,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -198,20 +199,25 @@ public abstract class MetadataUtils {
     /**
      * 将 {@link Metadata} 数组转换为 Map
      *
-     * @param metadatas Metadata 数组
+     * @param metadata Metadata 数组
      *
      * @return 元数据 Map，key 为 Metadata 的 key，value 为 Metadata 的 value
      */
-    public static Map<String, String> toMap(Metadata[] metadatas) {
-        Map<String, String> result = new LinkedHashMap<>();
+    public static Map<String, Object> toMap(Metadata[] metadata) {
 
-        if (metadatas == null || metadatas.length == 0) {
+        return toMap(metadata, Metadata::value);
+    }
+
+    public static Map<String, Object> toMap(Metadata[] metadata, Function<Metadata, Object> keyMapper) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        if (metadata == null || metadata.length == 0) {
             return result;
         }
 
-        Arrays.stream(metadatas)
+        Arrays.stream(metadata)
                 .filter(Objects::nonNull)
-                .forEach(metadata -> result.put(metadata.key(), metadata.value()));
+                .forEach(m -> result.put(m.key(), keyMapper.apply(m)));
 
         return result;
     }

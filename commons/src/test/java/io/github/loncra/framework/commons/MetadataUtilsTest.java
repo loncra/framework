@@ -378,7 +378,7 @@ public class MetadataUtilsTest {
                 createMetadata("key3", "value3")
         };
 
-        Map<String, String> result = MetadataUtils.toMap(metadatas);
+        Map<String, Object> result = MetadataUtils.toMap(metadatas);
 
         Assertions.assertNotNull(result);
         Assertions.assertEquals(3, result.size());
@@ -387,12 +387,12 @@ public class MetadataUtilsTest {
         Assertions.assertEquals("value3", result.get("key3"));
 
         // 测试 null 数组
-        Map<String, String> nullResult = MetadataUtils.toMap(null);
+        Map<String, Object> nullResult = MetadataUtils.toMap(null);
         Assertions.assertNotNull(nullResult);
         Assertions.assertTrue(nullResult.isEmpty());
 
         // 测试空数组
-        Map<String, String> emptyResult = MetadataUtils.toMap(new Metadata[0]);
+        Map<String, Object> emptyResult = MetadataUtils.toMap(new Metadata[0]);
         Assertions.assertNotNull(emptyResult);
         Assertions.assertTrue(emptyResult.isEmpty());
 
@@ -402,7 +402,7 @@ public class MetadataUtilsTest {
                 null,
                 createMetadata("key2", "value2")
         };
-        Map<String, String> withNullsResult = MetadataUtils.toMap(withNulls);
+        Map<String, Object> withNullsResult = MetadataUtils.toMap(withNulls);
         Assertions.assertNotNull(withNullsResult);
         Assertions.assertEquals(2, withNullsResult.size());
         Assertions.assertEquals("value1", withNullsResult.get("key1"));
