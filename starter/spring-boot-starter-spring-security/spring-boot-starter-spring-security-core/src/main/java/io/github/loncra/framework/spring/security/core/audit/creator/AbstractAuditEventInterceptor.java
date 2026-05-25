@@ -11,7 +11,6 @@ import io.github.loncra.framework.security.audit.IdAuditEvent;
 import io.github.loncra.framework.security.plugin.Plugin;
 import io.github.loncra.framework.security.plugin.PluginInfo;
 import io.github.loncra.framework.spring.security.core.audit.AuditEventInterceptor;
-import io.github.loncra.framework.spring.security.core.audit.CachedBodyFilter;
 import io.github.loncra.framework.spring.security.core.audit.config.ControllerAuditProperties;
 import io.github.loncra.framework.spring.security.core.authentication.token.AuditAuthenticationToken;
 import io.github.loncra.framework.spring.security.core.entity.AuditAuthenticationSuccessDetails;
@@ -23,7 +22,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.boot.actuate.audit.AuditEvent;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpStatus;
@@ -41,10 +39,10 @@ import java.util.Objects;
 /**
  * {@link AuditEventInterceptor} 模板实现：从 {@link AuditProperties} 采集请求快照、解析 principal、
  * 构建 {@link ControllerAuditEventMetadata}，并通过 {@link SpringExpressionMetadataGenerator} 解析 {@link Metadata} SpEL。
- * <p>请求体来自 {@link CachedBodyFilter} 在 Filter 层写入的 {@link CachedBodyFilter#REQUEST_BODY_ATTRIBUTE_NAME}（须在
- * {@link io.github.loncra.framework.spring.security.core.audit.ControllerAuditHandlerInterceptor} 之前执行），见 {@link #createControllerMetadata}。</p>
+ * <p>{@link #createControllerMetadata} 在 {@code preHandle} 采集 URL/头/参数，<b>不</b>读取请求体（早于 {@code @RequestBody} 绑定）；
+ * body 由 {@link RequestBodyAttributeAdviceAdapter} 写入 attribute 后，由子类或留痕仓库在更晚阶段填充。</p>
  * <p>{@link #afterCompletion}：HTTP 200 时 {@link ExecuteStatus#Success}；非 200 时 {@link ExecuteStatus#Failure}，
- * 有 {@code ex} 记录 {@code ex.getMessage()}，无 {@code ex} 记录 {@link HttpStatus} reason phrase。</p>
+ * 有 {@code ex} 记录 {@code ex.getMessage()}，否则记录 {@link HttpStatus} reason phrase。</p>
  *
  * @author maurice.chen
  */
@@ -151,8 +149,10 @@ public abstract class AbstractAuditEventInterceptor implements AuditEventInterce
             AuditEvent auditEvent
     ) {
         try {
+
             ControllerAuditEventMetadata controllerAuditEventMetadata = CastUtils.cast(auditEvent.getData().get(RestResult.DEFAULT_METADATA_NAME));
             controllerAuditEventMetadata.setEndTime(Instant.now());
+
             if (HttpStatus.OK.value() == response.getStatus()) {
                 controllerAuditEventMetadata.setExecuteStatus(ExecuteStatus.Success);
             } 
@@ -208,14 +208,6 @@ public abstract class AbstractAuditEventInterceptor implements AuditEventInterce
         }
     }
 
-    /**
-     * 构建控制器审计元数据（URL、方法、头、参数、body）。
-     * <p>body 从 {@link CachedBodyFilter#REQUEST_BODY_ATTRIBUTE_NAME} 读取；若 Filter 未缓存（multipart、超限等）则为空。</p>
-     *
-     * @param auditProperties 忽略项与 principal 配置
-     * @param request         当前请求（通常为 {@link CachedBodyHttpServletRequestWrapper}）
-     * @return 控制器审计元数据
-     */
     public ControllerAuditEventMetadata createControllerMetadata(
             AuditProperties auditProperties,
             HttpServletRequest request
@@ -231,15 +223,6 @@ public abstract class AbstractAuditEventInterceptor implements AuditEventInterce
 
         if (MapUtils.isNotEmpty(request.getParameterMap()) && !auditProperties.ignoreRequestParameters()) {
             controllerAuditEventMetadata.setParameters(request.getParameterMap());
-        }
-
-        Object body = request.getAttribute(CachedBodyFilter.REQUEST_BODY_ATTRIBUTE_NAME);
-        if (Objects.nonNull(body) && !auditProperties.ignoreRequestBody()) {
-            Map<String, Object> bodyMap = body instanceof Map<?, ?> map
-                    ? CastUtils.cast(map)
-                    : CastUtils.convertValue(body, CastUtils.MAP_TYPE_REFERENCE);
-            bodyMap.put(BeanDefinitionParserDelegate.CLASS_ATTRIBUTE, body.getClass());
-            controllerAuditEventMetadata.setBody(bodyMap);
         }
 
         return controllerAuditEventMetadata;

@@ -14,6 +14,7 @@ import io.github.loncra.framework.spring.web.mvc.SpringMvcUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import net.sf.jsqlparser.statement.Statement;
 import org.apache.ibatis.mapping.MappedStatement;
+import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.boot.actuate.audit.AuditEvent;
 
 import java.time.Instant;
@@ -92,6 +93,14 @@ public class SecurityPrincipalOperationDataTraceRepository extends MybatisPlusOp
             ControllerAuditEventMetadata controller = CastUtils.cast(metadata);
             controller.setEndTime(Instant.now());
             controller.setExecuteStatus(ExecuteStatus.Success);
+
+            Object body = SpringMvcUtils.getRequestAttribute(RequestBodyAttributeAdviceAdapter.REQUEST_BODY_ATTRIBUTE_NAME);
+            Boolean ignore = SpringMvcUtils.getRequestAttribute(OperationDataTraceAuditEventInterceptor.IGNORE_REQUEST_BODY_ATTR_NAME);
+            if (Objects.nonNull(body) && !ignore) {
+                Map<String, Object> bodyMap = CastUtils.convertValue(body, CastUtils.MAP_TYPE_REFERENCE);
+                bodyMap.put(BeanDefinitionParserDelegate.CLASS_ATTRIBUTE, body.getClass());
+                controller.setBody(bodyMap);
+            }
         }
 
         Map<String, Object> newData = new LinkedHashMap<>(controllerAuditEvent.getData());

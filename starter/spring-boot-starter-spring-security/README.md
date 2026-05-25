@@ -32,7 +32,7 @@
 | `AuditableInterceptor` | 绑定 **`@Auditable`**（basic-security）；request attribute 键默认 **`controllerAudit`** |
 | `OperationDataTraceAuditEventInterceptor` | 绑定 **`@OperationDataTrace`**；键默认 **`operationDataTraceAudit`**；**必须标注**才会触发 MyBatis 写库留痕 |
 | `SecurityPrincipalOperationDataTraceRepository` | 读取 `operationDataTraceAudit` 上的 `AuditEvent`，合并 **`operationTrace`**（`OperationDataTraceMetadata`）后发布，并 remove attribute 避免重复发布 |
-| `CachedBodyFilter` | Filter 层缓存 POST/PUT/PATCH 请求体，供 `createControllerMetadata` 在 `preHandle` 读取（见下文） |
+| `RequestBodyAttributeAdviceAdapter` | `@ControllerAdvice`：在 **`@RequestBody` 绑定后** 将 body 写入 request attribute，供审计 metadata 延后填充（见下文） |
 
 配置前缀 **`loncra.framework.authentication.controller.audit`**（`ControllerAuditProperties`）：可改 `controller-audit-name`、`operation-data-trace-audit-name`。
 
@@ -40,37 +40,24 @@
 
 **Breaking**：旧版 `@Auditable` 顶层 `principal` / `ignoreRequest*` 已移至 **`@AuditProperties`**；开启 DB 留痕需在方法上显式加 **`@OperationDataTrace`**，不再依赖 request 上的 `operationDataTrace=true` 等 flag。
 
-#### 请求体快照：`CachedBodyFilter`
+#### 请求体快照：`RequestBodyAttributeAdviceAdapter`
 
-`AbstractAuditEventInterceptor#createControllerMetadata` 在 **`ControllerAuditHandlerInterceptor#preHandle`**（Controller 执行**之前**）采集请求快照，因此不能依赖 `@ControllerAdvice` / `@RequestBody` 绑定后再写入的 attribute。框架改为在 **Filter 层** 提前缓存 body：
+`AbstractAuditEventInterceptor#createControllerMetadata` 在 **`preHandle`** 执行，**早于** Controller 的 `@RequestBody` 绑定，因此** intentionally 不在此阶段读 InputStream 或写 body**（直接读流会破坏下游入参）。
 
-1. **`CachedBodyFilter`**（默认注册，`order = HIGHEST_PRECEDENCE + 5`）对 POST/PUT/PATCH 且非 multipart 的请求，用 **`CachedBodyHttpServletRequestWrapper`** 读一遍 `InputStream`。
-2. 解析结果写入 wrapped request 的 attribute，键为 **`CachedBodyFilter.REQUEST_BODY_ATTRIBUTE_NAME`**（即 `CachedBodyFilter` 全类名）。
-3. **`preHandle`** 中通过 `request.getAttribute(...)` 读取，写入 `ControllerAuditEventMetadata.body`（JSON → `Map`；表单 → `parameterMap`；其它或 JSON 解析失败 → `{ "_raw": "..." }`，并附加 `class` 键）。
+请求体由 [`RequestBodyAttributeAdviceAdapter`](spring-boot-starter-spring-security-core/src/main/java/io/github/loncra/framework/spring/security/core/audit/RequestBodyAttributeAdviceAdapter.java) 在 **`afterBodyRead`** 写入 `SpringMvcUtils` / request attribute（键为 `RequestBodyAttributeAdviceAdapter.REQUEST_BODY_ATTRIBUTE_NAME`）。默认 Bean：`SpringSecurityAutoConfiguration#requestBodyAttributeAdviceAdapter`。
 
-注册条件（见 `SpringSecurityAutoConfiguration#cachedBodyFilterRegistration`）：`loncra.framework.security.audit.enabled=true`（默认）且 `loncra.framework.authentication.controller.audit.enabled-cached-body-filter=true`（默认）。
+| 场景 | body 写入 `ControllerAuditEventMetadata` 的时机 |
+|------|--------------------------------------------------|
+| **`@Auditable`** | `AuditableInterceptor#afterCompletion`（在 `ControllerAuditHandlerInterceptor` **publish 之前**） |
+| **`@OperationDataTrace` + MyBatis 留痕** | `SecurityPrincipalOperationDataTraceRepository#createAuditEvent`（Controller 已执行、Advice 已写入 attribute 后，与 `operationTrace` 合并发布） |
 
-```yaml
-loncra:
-  framework:
-    security:
-      audit:
-        enabled: true
-    authentication:
-      controller:
-        audit:
-          controller-audit-name: controllerAudit
-          operation-data-trace-audit-name: operationDataTraceAudit
-          enabled-cached-body-filter: true      # 默认 true
-          cached-body-filter-order: -2147483643 # 默认 Ordered.HIGHEST_PRECEDENCE + 5
-          cached-body-max-bytes: 1048576        # 默认 1MB，超出则跳过缓存
-```
+**限制**：仅当接口存在 **`@RequestBody`** 且 Advice 生效时才有 attribute；**multipart**、纯 query/form（无 JSON body）等场景可能没有 body 快照（表单字段仍可通过 `parameterMap` 在 preHandle 采集）。
 
-**不会**写入审计 body 的常见情况：GET/DELETE 等无 body 方法、**multipart** 上传、body **超过** `cached-body-max-bytes`、注解 **`@AuditProperties#ignoreRequestBody()`** 为 true、或关闭了 `enabled-cached-body-filter`。
+**排查审计 metadata 无 body**：是否使用 `@RequestBody`、`@AuditProperties#ignoreRequestBody()` 是否为 true、留痕是否在 Controller 执行之后才触发（`@OperationDataTrace` 路径）。
 
 #### `afterCompletion` 执行状态
 
-请求结束时补全 `ControllerAuditEventMetadata`：**HTTP 200 → `ExecuteStatus.Success`**；**非 200 → `Failure`**，有异常写 `ex.getMessage()`，无异常写对应 `HttpStatus` 的 reason phrase。
+[`AbstractAuditEventInterceptor#afterCompletion`](spring-boot-starter-spring-security-core/src/main/java/io/github/loncra/framework/spring/security/core/audit/creator/AbstractAuditEventInterceptor.java)：HTTP **200** → `ExecuteStatus.Success`；**非 200** → `Failure`，有异常写 `ex.getMessage()`，否则写对应 `HttpStatus` reason phrase。
 
 ## 3. 主开关与相关条件
 
@@ -158,7 +145,7 @@ Spring Boot 3 从 **`META-INF/spring/org.springframework.boot.autoconfigure.Auto
 | `loncra.framework.authentication.spring.security.oauth2` | **全部** `OAuth2Properties`（**含**子开关 `enabled`、**RSA、issuer、authorization-cache 等**）。见上文「统一规则」。 |
 | `loncra.framework.authentication.plugin` | 插件信息（Actuator 上暴露的树等）。 |
 | `loncra.framework.authentication.captcha-verification` | 验证码。 |
-| `loncra.framework.authentication.controller.audit` | 控制层审计；含 `controller-audit-name`、`operation-data-trace-audit-name`、`enabled-cached-body-filter`、`cached-body-max-bytes` 等（见上文 CachedBodyFilter）。 |
+| `loncra.framework.authentication.controller.audit` | 控制层审计：`controller-audit-name`、`operation-data-trace-audit-name`（见上文 RequestBodyAttributeAdviceAdapter）。 |
 | `loncra.framework.authentication.data-owner` | 数据属主/留痕主体等。 |
 | `loncra.framework.authentication.session` 及 `…remember-me` | 仅**session 子模块** 场景。 |
 | `loncra.framework.authentication.access-token` | 例如只控制**是否**注册刷新 AccessToken 的 Controller（`enable-refresh-access-token: true` 等）。 |
