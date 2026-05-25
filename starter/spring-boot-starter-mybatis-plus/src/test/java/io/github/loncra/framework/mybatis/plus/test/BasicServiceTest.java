@@ -6,8 +6,8 @@ import io.github.loncra.framework.commons.enumerate.basic.DisabledOrEnabled;
 import io.github.loncra.framework.commons.enumerate.basic.ExecuteStatus;
 import io.github.loncra.framework.commons.id.IdEntity;
 import io.github.loncra.framework.commons.id.StringIdEntity;
+import io.github.loncra.framework.mybatis.domain.metadata.OperationDataTraceMetadata;
 import io.github.loncra.framework.mybatis.enumerate.OperationDataType;
-import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecord;
 import io.github.loncra.framework.mybatis.plus.test.entity.AllTypeEntity;
 import io.github.loncra.framework.mybatis.plus.test.service.AllTypeEntityService;
 import org.apache.commons.lang3.Strings;
@@ -23,7 +23,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -79,14 +78,14 @@ public class BasicServiceTest {
         List<AuditEvent> events = auditEventRepository.find(null, null, null);
         Assertions.assertEquals(1, events.size());
 
-        AuditEvent event = events.iterator().next();
-        Map<String, Object> submitData = CastUtils.cast(event.getData().get(OperationDataTraceRecord.SUBMIT_DATA_FIELD));
+        AuditEvent event = events.getFirst();
 
         Assertions.assertEquals(event.getPrincipal(), InetAddress.getLocalHost().getHostAddress());
-        Assertions.assertEquals(submitData.get(IdEntity.ID_FIELD_NAME), entity.getId());
+        Assertions.assertEquals(event.getData().get(IdEntity.ID_FIELD_NAME), entity.getId());
         Assertions.assertTrue(Strings.CS.endsWith(event.getType(), OperationDataType.INSERT.toString()));
 
-        Assertions.assertEquals(objectMapper.writeValueAsString(submitData.get("status")), objectMapper.writeValueAsString(DisabledOrEnabled.Disabled));
+        OperationDataTraceMetadata metadata = CastUtils.convertValue(event.getData(), OperationDataTraceMetadata.class);
+        Assertions.assertEquals(objectMapper.writeValueAsString(metadata.getData().get("status")), objectMapper.writeValueAsString(DisabledOrEnabled.Disabled));
 
         allTypeEntityService
                 .lambdaUpdate()
@@ -101,8 +100,8 @@ public class BasicServiceTest {
         Assertions.assertEquals(event.getPrincipal(), InetAddress.getLocalHost().getHostAddress());
         Assertions.assertTrue(Strings.CS.endsWith(event.getType(), OperationDataType.UPDATE.toString()));
 
-        submitData = CastUtils.cast(event.getData().get(OperationDataTraceRecord.SUBMIT_DATA_FIELD));
-        Integer statusValue = CastUtils.cast(submitData.get("status"));
+        metadata = CastUtils.convertValue(event.getData(), OperationDataTraceMetadata.class);
+        Integer statusValue = CastUtils.cast(metadata.getData().get("status"));
         Assertions.assertEquals(statusValue, DisabledOrEnabled.Enabled.getValue());
 
         entity.setStatus(DisabledOrEnabled.Disabled);
@@ -114,8 +113,8 @@ public class BasicServiceTest {
         Assertions.assertEquals(event.getPrincipal(), InetAddress.getLocalHost().getHostAddress());
         Assertions.assertTrue(Strings.CS.endsWith(event.getType(), OperationDataType.UPDATE.toString()));
 
-        submitData = CastUtils.cast(event.getData().get(OperationDataTraceRecord.SUBMIT_DATA_FIELD));
-        Assertions.assertEquals(objectMapper.writeValueAsString(submitData.get("status")), objectMapper.writeValueAsString(DisabledOrEnabled.Disabled));
+        metadata = CastUtils.convertValue(event.getData(), OperationDataTraceMetadata.class);
+        Assertions.assertEquals(objectMapper.writeValueAsString(metadata.getData().get("status")), objectMapper.writeValueAsString(DisabledOrEnabled.Disabled));
 
         allTypeEntityService.deleteByEntity(entity);
         events = auditEventRepository.find(null, null, null);
@@ -131,10 +130,9 @@ public class BasicServiceTest {
         Assertions.assertEquals(5, events.size());
 
         event = events.getLast();
-        submitData = CastUtils.cast(event.getData().get(OperationDataTraceRecord.SUBMIT_DATA_FIELD));
 
         Assertions.assertEquals(event.getPrincipal(), InetAddress.getLocalHost().getHostAddress());
-        Assertions.assertEquals(submitData.get(IdEntity.ID_FIELD_NAME), entity.getId());
+        Assertions.assertEquals(event.getData().get(IdEntity.ID_FIELD_NAME), entity.getId());
         Assertions.assertTrue(Strings.CS.endsWith(event.getType(), OperationDataType.INSERT.toString()));
 
         allTypeEntityService.lambdaUpdate().eq(AllTypeEntity::getId, entity.getId()).remove();

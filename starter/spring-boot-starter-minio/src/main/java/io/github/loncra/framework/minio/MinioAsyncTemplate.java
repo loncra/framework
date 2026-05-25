@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Multimaps;
 import io.github.loncra.framework.commons.CastUtils;
 import io.github.loncra.framework.commons.exception.SystemException;
-import io.github.loncra.framework.commons.minio.Bucket;
-import io.github.loncra.framework.commons.minio.FileObject;
-import io.github.loncra.framework.commons.minio.MoveFileObject;
-import io.github.loncra.framework.commons.minio.VersionFileObject;
+import io.github.loncra.framework.commons.minio.*;
 import io.github.loncra.framework.minio.config.MinioProperties;
 import io.minio.*;
 import io.minio.messages.DeleteObject;
@@ -600,6 +597,20 @@ public class MinioAsyncTemplate extends ConsoleApiMinioAsyncClient {
         }
 
         return result;
+    }
+
+    public static List<ObjectWriteResult> convertObjectWriteResult(List<ObjectItem> items, String bucketName) {
+        List<ObjectWriteResult> list = new LinkedList<>();
+        for (ObjectItem item : items) {
+            ObjectWriteResult objectWriteResult = new ObjectWriteResult();
+            objectWriteResult.setBucketName(bucketName);
+            objectWriteResult.setObjectName(item.getObjectName());
+            objectWriteResult.setEtag(item.getEtag());
+            objectWriteResult.setSize(item.getSize());
+            objectWriteResult.setExtraHeaders(item.getUserMetadata());
+            list.add(objectWriteResult);
+        }
+        return list;
     }
 
     /**

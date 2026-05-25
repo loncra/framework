@@ -70,7 +70,8 @@ io.github.loncra.framework.security
 │   ├── StoragePositioningGenerator            # 存储位置生成器
 │   ├── SpringElStoragePositioningGenerator    # SpEL 存储位置生成器
 │   ├── AuditPrincipal / SimpleAuditPrincipal  # 审计当事人模型
-│   └── Auditable                              # 审计标记注解
+│   ├── Auditable                              # 控制器审计标记（由 spring-security-core AuditableInterceptor 消费）
+│   ├── AuditProperties                        # 嵌套于 @Auditable / @OperationDataTrace 的忽略项与 principal 配置
 ├── audit.memory
 │   ├── CustomInMemoryAuditConfiguration       # 内存审计自动配置
 │   └── CustomInMemoryAuditEventRepository     # 带写入拦截的内存审计仓库
@@ -566,4 +567,5 @@ loncra:
 - `MongoAuditEventRepository` 当前只内置 `principal`、`type`、`timestamp` 条件构造；复杂业务过滤建议通过查询拦截器扩展。
 - `IgnoreOrDesensitizeResultFilter` 的顺序为 `Ordered.HIGHEST_PRECEDENCE`，请求结束时会自动清理 ThreadLocal 上下文。
 - `IgnoreOrDesensitizeResultHolder.convert(...)` 依赖 `commons` 中的 JsonPath 对象处理能力，配置表达式应与实际响应结构保持一致。
-- `@Auditable` 和 `@Plugin` 当前只提供元数据声明，不会单独触发 AOP 审计或自动资源扫描；需要上层模块或业务系统消费这些注解。
+- `@Auditable` 在本模块仅声明元数据；**控制器审计**由 `spring-boot-starter-spring-security-core` 的 **`AuditableInterceptor`** 消费（见该模块 README）。`@Plugin` 仍由上层做资源/权限扫描。
+- `@AuditProperties` 通过 **`@Auditable#ignoreProperties()`** 或 **`@OperationDataTrace#ignoreProperties()`** 嵌套使用，配置是否忽略请求头/参数/体及 principal 解析键；**不再**在 `@Auditable` 顶层直接写 `principal` / `ignoreRequest*`。

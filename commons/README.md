@@ -37,7 +37,7 @@
 - `exception`：异常体系，包括 `SystemException`、`ServiceException`、`ErrorCodeException`、`StatusErrorCodeException`、`EnumException`、`ValueEnumNotFoundException`、`NameEnumNotFoundException`。
 - `jackson`：枚举序列化/反序列化与字段脱敏，包括 `NameEnum*`、`ValueEnum*`、`NameValueEnum*`、`DesensitizeSerializer`。
 - `domain`：通用领域模型，包括 `AckMessage`、`AbstractAckMessage`、`AccessToken`、`RefreshToken`、`ExpiredToken`、`AckResponseBody`、`DescriptionMetadata`、`TreeDescriptionMetadata`、`RetryMetadata`、`ProtocolMetadata`、`CloudSecretMetadata`、`RefreshAccessTokenMetadata`。
-- `generator`：ID 生成器抽象与实现，包括 `IdGenerator<T>`、`SnowflakeIdGenerator`、`SnowflakeProperties`。
+- `generator`：ID 生成器（`IdGenerator`、`SnowflakeIdGenerator`）与 SpEL 模板工具（`SpringExpressionGenerator`、`SpringExpressionMetadataGenerator`，供 idempotent 与 security 审计 `@Metadata` 复用）。
 - `query`：查询条件抽象，包括 `Property`、`Condition`、`ConditionType`、`ConditionParser`、`SimpleConditionParser`、`QueryGenerator<T>`、`WildcardParser<Q>`。
 - `retry`：重试契约，包括 `Retryable`。
 - `minio`：MinIO 文件与桶 DTO，包括 `Bucket`、`ExpirableBucket`、`FileObject`、`FilenameObject`、`VersionFileObject`、`CopyFileObject`、`MoveFileObject`、`ObjectWriteResult`。
@@ -185,6 +185,23 @@ import io.github.loncra.framework.commons.generator.twitter.SnowflakeProperties;
 SnowflakeProperties properties = new SnowflakeProperties(1, 1, "001");
 SnowflakeIdGenerator idGenerator = new SnowflakeIdGenerator(properties);
 String id = idGenerator.generateId();
+```
+
+### SpEL 模板生成（`SpringExpressionGenerator`）
+
+表达式中用 **`[` … `]`**（默认）包裹 SpEL 片段，在变量 Map 中逐段求值并替换为字符串。`SpringExpressionMetadataGenerator` 配合 **`@Metadata`**，被 idempotent 的 `SpelExpressionValueGenerator` 与 spring-security 控制器审计共用。
+
+```java
+import io.github.loncra.framework.commons.generator.SpringExpressionGenerator;
+
+import java.util.Map;
+
+SpringExpressionGenerator generator = new SpringExpressionGenerator();
+Object result = generator.generate(
+        "prefix_",
+        "user_[#principal]",
+        Map.of("principal", "admin")
+);
 ```
 
 ### 查询条件解析

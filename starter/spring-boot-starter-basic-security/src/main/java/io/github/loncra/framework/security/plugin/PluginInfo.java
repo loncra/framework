@@ -2,6 +2,7 @@ package io.github.loncra.framework.security.plugin;
 
 import io.github.loncra.framework.commons.CastUtils;
 import io.github.loncra.framework.commons.MetadataUtils;
+import io.github.loncra.framework.commons.annotation.Metadata;
 import io.github.loncra.framework.commons.id.BasicIdentification;
 import io.github.loncra.framework.commons.tree.Tree;
 import io.github.loncra.framework.security.entity.ResourceAuthority;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.Strings;
 
 import java.io.Serial;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * 插件信息
@@ -115,6 +117,10 @@ public class PluginInfo extends ResourceAuthority implements Tree<String, Plugin
         this(plugin, new ArrayList<>());
     }
 
+    public PluginInfo(Plugin plugin, Function<Metadata, Object> metadataFunction) {
+        this(plugin, metadataFunction, new ArrayList<>());
+    }
+
     /**
      * 插件信息
      *
@@ -123,6 +129,14 @@ public class PluginInfo extends ResourceAuthority implements Tree<String, Plugin
      */
     public PluginInfo(
             Plugin plugin,
+            List<Tree<String, PluginInfo>> children
+    ) {
+        this(plugin, Metadata::value, children);
+    }
+
+    public PluginInfo(
+            Plugin plugin,
+            Function<Metadata, Object> metadataFunction,
             List<Tree<String, PluginInfo>> children
     ) {
         this.setId(plugin.id());
@@ -140,7 +154,7 @@ public class PluginInfo extends ResourceAuthority implements Tree<String, Plugin
             this.setAuthority(StringUtils.join(plugin.authority(), CastUtils.COMMA));
         }
         if (ArrayUtils.isNotEmpty(plugin.metadata())) {
-            Map<String, Object> metadata = MetadataUtils.toMap(plugin.metadata());
+            Map<String, Object> metadata = MetadataUtils.toMap(plugin.metadata(), metadataFunction);
             this.setMetadata(metadata);
         }
     }

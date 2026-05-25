@@ -21,7 +21,23 @@
 - **多认证类型可插**：同一套「用户名+密码+类型」的入口，实际找用户、校密码，由**你自己实现的若干小 Service** 分工（类型 SecurityPrincipal 相关）。  
 - **OAuth2 不另搞一套错误格式**：授权端点/Token 端点的成功与失败，尽量走与 core 相同的 **Json…Handler**，避免**同一项目里**两种风格。  
 - **不想抄一整份 Security 配置**：用 **WebSecurityConfigurerAfterAdapter** 这种「在已有链**后面/旁边**加几行」的方式，而不是自己建一个新的 `SecurityFilterChain` 复制粘贴几十行。  
-- **有 Mybatis-Plus 时**：在「有登录用户、且本请求允许留痕」时，用 **SecurityPrincipal 增强版**留痕实现，避免**后台批任务**没有用户却误记审计。此时若使用 core 中的 `SecurityPrincipalOperationDataTraceResolver`，会与 **MP 默认解析器**一样注入全部 **`OperationDataTraceRecordHook`** Bean（含构建阶段与 `preSave` 保存前回调，详见 [`spring-boot-starter-mybatis`](../spring-boot-starter-mybatis/README.md)）。
+- **有 Mybatis-Plus 时**：在 Controller 方法标注 **`@OperationDataTrace`** 时，由 **`SecurityPrincipalOperationDataTraceRepository`** 与 MP 默认 **`MybatisPlusOperationDataTraceRepository`** 一样注入全部 **`OperationDataTraceRecordHook`** Bean（含构建阶段与 `preSave`，详见 [`spring-boot-starter-mybatis`](../spring-boot-starter-mybatis/README.md)）。
+
+### 控制器审计与写库留痕（core）
+
+`ControllerAuditHandlerInterceptor` 聚合多个 **`AuditEventInterceptor`** 策略：
+
+| 组件 | 作用 |
+|------|------|
+| `AuditableInterceptor` | 绑定 **`@Auditable`**（basic-security）；request attribute 键默认 **`controllerAudit`** |
+| `OperationDataTraceAuditEventInterceptor` | 绑定 **`@OperationDataTrace`**；键默认 **`operationDataTraceAudit`**；**必须标注**才会触发 MyBatis 写库留痕 |
+| `SecurityPrincipalOperationDataTraceRepository` | 读取 `operationDataTraceAudit` 上的 `AuditEvent`，合并 **`operationTrace`**（`OperationDataTraceMetadata`）后发布，并 remove attribute 避免重复发布 |
+
+配置前缀 **`loncra.framework.authentication.controller.audit`**（`ControllerAuditProperties`）：可改 `controller-audit-name`、`operation-data-trace-audit-name`。
+
+**`@Auditable` 与 `@OperationDataTrace` 可并存**：各自独立 attribute 与发布路径；写库留痕仅走 `@OperationDataTrace` 链路。请求头/体/参数忽略项见嵌套 **`@AuditProperties`**（`ignoreProperties()`）。
+
+**Breaking**：旧版 `@Auditable` 顶层 `principal` / `ignoreRequest*` 已移至 **`@AuditProperties`**；开启 DB 留痕需在方法上显式加 **`@OperationDataTrace`**，不再依赖 request 上的 `operationDataTrace=true` 等 flag。
 
 ## 3. 主开关与相关条件
 

@@ -6,7 +6,7 @@
 - 条件查询表达式生成（`MybatisPlusQueryGenerator`）。
 - 字段自动加密/解密（注解 + 拦截器）。
 - 自动更新时间填充（`@LastModifiedDate`）。
-- 数据库变更留痕并推送到 Spring 审计仓库（基于 `OperationDataTraceResolver`）。
+- 数据库变更留痕并推送到 Spring 审计仓库（基于 `OperationDataTraceRepository`）。
 
 如果你是新手，可以先按本文“快速开始”跑通，再逐步加上加密和审计能力。
 
@@ -20,7 +20,7 @@
   5. 写入加密与条件中的加密（`EncryptInnerInterceptor`）
   6. **多租户**（`TenantLineInnerInterceptor` + `TenantEntityHandler`）：从已注册 Mapper 解析出「泛型实体实现 `io.github.loncra.framework.commons.tenant.TenantEntity` 且带 `@TableName`」的**表名集合**，对这类表在 SQL 中追加租户列条件；是否追加由 `TenantLinePolicy` 决定，默认注册 `TenantLinePolicy.ALWAYS`（**总是**从 `TenantContextHolder` 取租户并拼条件）。运营后台等需**跨租户**时，可**自注册**同名 `TenantLinePolicy` Bean 在适当时机返回不拼条件。
 - 同时注册**独立的** MyBatis 插件 `DecryptInterceptor`（`@Intercepts` 为 `Executor#query`）：在 `MybatisPlusInterceptor` **之外**，对**查询结果**做字段解密；与框架内其他 `org.apache.ibatis.plugin.Interceptor` Bean 一样，由 **MyBatis Spring Boot** 的自动配置**收集**后挂到 `SqlSessionFactory`（以所用版本行为为准）。
-- 提供默认操作留痕解析器（`MybatisPlusOperationDataTraceResolver`），直接把 DB 变更推送到 Spring 审计仓库。
+- 提供默认操作留痕解析器（`MybatisPlusOperationDataTraceRepository`），直接把 DB 变更推送到 Spring 审计仓库。
 - 提供统一查询生成器（`filter_[字段_通配符]`）+ JSON 字段查询扩展（`jin/jeq/jso/jsa`）。
 - 提供 `BasicService` 泛型服务基类，封装大量常见 CRUD 与分页/链式操作。
 - 提供逻辑删除与版本号实体基类接口/实现（`LogicDeleteEntity`、`VersionEntity` 等）。
@@ -43,8 +43,8 @@
 - `crypto`
   - `DataAesCryptoService`、`DataRsaCryptoService`
 - `audit`
-  - `MybatisPlusOperationDataTraceResolver`
-  - `EntityIdOperationDataTraceRecord`
+  - `MybatisPlusOperationDataTraceRepository`
+  - `EntityIdOperationDataTraceMetadata`
 - `wildcard`
   - 基础通配符：`eq/ne/like/llike/rlike/gt/gte/lt/lte/in/nin/between/eqn/nen`
   - JSON 通配符：`jin/jeq/jso/jsa`
@@ -107,10 +107,10 @@ loncra:
 这样就能跑通：
 
 - MyBatis-Plus 基础能力
-- 操作数据留痕（依赖默认 `MybatisPlusOperationDataTraceResolver` 发布审计事件）
+- 操作数据留痕（依赖默认 `MybatisPlusOperationDataTraceRepository` 发布审计事件）
 - 审计事件入内存仓库
 
-> **POM 说明**：`spring-boot-starter-basic-security` 在本 artifact 的 `pom.xml` 中声明为 `<optional>true</optional>`，**不会**随本 starter 自动进入你的工程。`MybatisPlusOperationDataTraceResolver` 直接依赖 `io.github.loncra.framework.security.audit.*` 与 `org.springframework.boot.actuate.audit.listener.AuditApplicationEvent`。使用**默认**留痕时，请在应用 POM 中**显式**加入 `spring-boot-starter-basic-security`（该 starter 自身**通常**会传递 `spring-boot-starter-actuator`，满足 `AuditApplicationEvent` 的类路径）。若**不**要审计、或**避免**引 security，可**自行**实现并注册 `OperationDataTraceResolver`（或**排除**自动配置中的相关 Bean，视你的 Spring 能力而定），使默认解析器**不要**被实例化。
+> **POM 说明**：`spring-boot-starter-basic-security` 在本 artifact 的 `pom.xml` 中声明为 `<optional>true</optional>`，**不会**随本 starter 自动进入你的工程。`MybatisPlusOperationDataTraceRepository` 直接依赖 `io.github.loncra.framework.security.audit.*` 与 `org.springframework.boot.actuate.audit.listener.AuditApplicationEvent`。使用**默认**留痕时，请在应用 POM 中**显式**加入 `spring-boot-starter-basic-security`（该 starter 自身**通常**会传递 `spring-boot-starter-actuator`，满足 `AuditApplicationEvent` 的类路径）。若**不**要审计、或**避免**引 security，可**自行**实现并注册 `OperationDataTraceRepository`（或**排除**自动配置中的相关 Bean，视你的 Spring 能力而定），使默认解析器**不要**被实例化。
 
 ## 自动装配了什么
 
@@ -118,7 +118,7 @@ loncra:
 
 - `MybatisPlusQueryGenerator`
 - `TenantLinePolicy`：未自定义时，返回 `TenantLinePolicy.ALWAYS`
-- `MybatisPlusOperationDataTraceResolver`：未定义其他 `OperationDataTraceResolver` 且 `loncra.framework.mybatis.operation-data-trace.enabled` 为 `true` 时
+- `MybatisPlusOperationDataTraceRepository`：未定义其他 `OperationDataTraceRepository` 且 `loncra.framework.mybatis.operation-data-trace.enabled` 为 `true` 时
 - `MybatisPlusInterceptor`：内含 **6** 段 Inner 链（**顺序**见上节）
 - `DecryptInterceptor`
 - `DataAesCryptoService` / `DataRsaCryptoService`：在 `loncra.framework.mybatis.plus.crypto.enabled` 为 `true`（`matchIfMissing` 为 `true`）且无同类型 Bean 时；Bean 名为 `mybatisPlusDataAesCryptoService`、`mybatisPlusDataRsaCryptoService`（`CryptoProperties` 常量），与 `@Encryption` / `@EncryptProperties` 等 `beanName` 一致
@@ -237,12 +237,12 @@ public class UserEntity {
 
 ## 7. 操作数据留痕推送审计仓库
 
-`MybatisPlusOperationDataTraceResolver` 是该模块与 `basic-security` 的关键桥接：
+`MybatisPlusOperationDataTraceRepository` 是该模块与 `basic-security` 的关键桥接：
 
 - 识别 `INSERT/UPDATE/DELETE` 的实体与条件
 - 尝试提取实体 ID（含 Wrapper 条件中的 ID）
-- 生成 `OperationDataTraceRecord` / `EntityIdOperationDataTraceRecord`
-- 在生成**基础**记录时走 `AbstractOperationDataTraceResolver#createBasicOperationDataTraceRecord`，因而**自动支持**容器中所有 `OperationDataTraceRecordHook` Bean（`ObjectProvider` 注入列表）：可按**表名**在 `preCreate…` / `postCreate…` 中加工；在 **`OperationDataTraceInterceptor`** 触发 `save` 前还可执行 **`preSave…`**（详见 `spring-boot-starter-mybatis` README《留痕记录钩子》）
+- 生成 `OperationDataTraceRecord` / `EntityIdOperationDataTraceMetadata`
+- 在生成**基础**记录时走 `AbstractOperationDataTraceRepository#createBasicOperationDataTraceRecord`，因而**自动支持**容器中所有 `OperationDataTraceRecordHook` Bean（`ObjectProvider` 注入列表）：可按**表名**在 `preCreate…` / `postCreate…` 中加工；在 **`OperationDataTraceInterceptor`** 触发 `save` 前还可执行 **`preSave…`**（详见 `spring-boot-starter-mybatis` README《留痕记录钩子》）
 - 封装审计事件并发布：
   - 普通：`IdAuditEvent`
   - 带存储定位：`IdStoragePositioningAuditEvent`
@@ -267,24 +267,24 @@ public class UserEntity {
 - 后者处理查询结果解密。
 - 都基于注解扫描字段并路由到对应 `EncryptService`/`DecryptService`。
 
-## 4. `MybatisPlusOperationDataTraceResolver`
+## 4. `MybatisPlusOperationDataTraceRepository`
 
-- `spring-boot-starter-mybatis` 中 `OperationDataTraceResolver` 的默认实现。
-- 默认 Bean（`MybatisPlusAutoConfiguration#mybatisPlusOperationDataTraceRepository`）构造为 `new MybatisPlusOperationDataTraceResolver(properties, recordHooks.stream().toList())`，会传入**全部** `OperationDataTraceRecordHook` Bean。
-- 另有一构造 `MybatisPlusOperationDataTraceResolver(properties, applicationEventPublisher)` 继承父类**单参**构造，**Hook 列表为空**（旧用法或无须表级钩子时使用）。
-- `createAuditEvent(OperationDataTraceRecord)` 先把 `record` 的 `submitData` / `remark` 放入 `data`，再调用重载 `createAuditEvent(record, data)`，得到**底层**的 `org.springframework.boot.actuate.audit.AuditEvent`（或子类）。
+- `spring-boot-starter-mybatis` 中 `OperationDataTraceRepository` 的默认实现。
+- 默认 Bean（`MybatisPlusAutoConfiguration#mybatisPlusOperationDataTraceRepository`）构造为 `new MybatisPlusOperationDataTraceRepository(properties, recordHooks.stream().toList())`，会传入**全部** `OperationDataTraceRecordHook` Bean。
+- 另有一构造 `MybatisPlusOperationDataTraceRepository(properties, applicationEventPublisher)` 继承父类**单参**构造，**Hook 列表为空**（旧用法或无须表级钩子时使用）。
+- `createAuditEvent(OperationDataTraceRecord)` 将 `CastUtils.convertValue(record.getData())` 作为 `AuditEvent.data`，再按 `record.getStoragePositioning()` 是否非空选择 `StoragePositioningAuditEvent` 或普通 `AuditEvent`。
 - `saveOperationDataTraceRecord` 对**每条**记录用**同一** `batchUuid` 再包一层，最后 `ApplicationEventPublisher.publishEvent(new AuditApplicationEvent(...))`（**参见源码 `saveOperationDataTraceRecord` 中分支**）。
 
 ### 4.1 `createAuditEvent` 分支与 `AuditEvent` 具体类型
 
-`AuditEvent` 的 **type** 字符串在两种分支中相同：`{auditPrefixName}_{target}_{OperationDataType}`，其中 `auditPrefixName` 来自 `OperationDataTraceProperties`（如 `OPERATION_DATA_AUDIT`），`target` 一般为表名，`OperationDataType` 为 `INSERT` / `UPDATE` / `DELETE` 等。
+`AuditEvent` 的 **type** 字符串：`{auditPrefixName}_{target}_{OperationDataType}`，其中 `target` 来自 `record.getData().getTarget()`（表名），`OperationDataType` 来自 `record.getData().getType()`。
 
 | 条件（`OperationDataTraceRecord`） | `createAuditEvent` 直接构造的**具体**类型 | 说明 |
 |-----------------------------------|---------------------------------------------|------|
 | `getStoragePositioning()` **非**空 | `io.github.loncra.framework.security.audit.StoragePositioningAuditEvent` | 构造参数：`storagePositioning`、`getCreationTime()`、`getPrincipal().toString()`、上式 **type**、`data` |
 | 否则（空或未配置） | `org.springframework.boot.actuate.audit.AuditEvent` | 无存储定位，为标准 Actuate 审计事件，其余字段与上一行**同一**套 **timestamp / principal / type / data** |
 
-`data` 在入口重载中至少含：`submitData`（`OperationDataTraceRecord.SUBMIT_DATA_FIELD`）、`remark`（`OperationDataTraceRecord.REMARK_FIELD`）；`EntityIdOperationDataTraceRecord` 等子类**不改变**上表**分支**（仅影响 `OperationDataTraceRecord` 的字段，从而改变 `data` 内容），**不**会单独产生第三种 `AuditEvent` 子类。
+`data` 为 `OperationDataTraceMetadata` 的 Map 形态（含 `target`、`type`、`data`、`remark` 等）；`EntityIdOperationDataTraceMetadata` 额外含 `id`，**不改变**上表 AuditEvent **分支**。
 
 ### 4.2 发布前包装与 `AuditApplicationEvent`
 
@@ -323,13 +323,13 @@ loncra:
 ## 与其他模块关系
 
 - `spring-boot-starter-mybatis-plus` **强依赖** `spring-boot-starter-mybatis`：复用 `JacksonJsonTypeHandler` / `NameValueEnumTypeHandler`、留痕 `OperationDataTraceInterceptor` 等。
-- `spring-boot-starter-basic-security`：**不**被本模块**自动**拉取（`optional`），但其 `io.github.loncra.framework.security.audit` 包是**默认** `MybatisPlusOperationDataTraceResolver` 发审计事件所**必需**的；需要完整审计链时由应用**显式**依赖。
+- `spring-boot-starter-basic-security`：**不**被本模块**自动**拉取（`optional`），但其 `io.github.loncra.framework.security.audit` 包是**默认** `MybatisPlusOperationDataTraceRepository` 发审计事件所**必需**的；需要完整审计链时由应用**显式**依赖。
 - `spring-boot-starter-access-crypto`：**会**被拉入，为 `DataAesCryptoService` / `DataRsaCryptoService` 与加解密拦截器**提供**算法实现。
 
 **角色可概括为**：
 
 - `mybatis`：TypeHandler、留痕**协议**与**拦截**入口
-- `mybatis-plus`：MP 插件链、查询生成、**默认** `MybatisPlusOperationDataTraceResolver`、服务基类、租户等
+- `mybatis-plus`：MP 插件链、查询生成、**默认** `MybatisPlusOperationDataTraceRepository`、服务基类、租户等
 - `basic-security`（可选但审计常用）：`IdAuditEvent`、存储定位类审计事件、审计仓库
 
 ## 扩展建议

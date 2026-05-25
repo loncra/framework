@@ -38,8 +38,8 @@ public class SpringSecurityOperationDataTest {
         mockMvc
                 .perform(
                         post(authenticationProperties.getLoginProcessingUrl())
-                                .param(authenticationProperties.getUsernameParamName(),"test")
-                                .param(authenticationProperties.getPasswordParamName(),"123456")
+                                .param(authenticationProperties.getUsernameParamName(), "test")
+                                .param(authenticationProperties.getPasswordParamName(), "123456")
                                 .header(authenticationProperties.getTypeHeaderName(), "test")
                                 .session(session)
                 )
@@ -68,8 +68,8 @@ public class SpringSecurityOperationDataTest {
                 .perform(get("/actuator/auditevents"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"events\":[{\"principal\":\"test:1\",\"type\":\"AUTHENTICATION_SUCCESS\",\"data\":{\"details\":{\"remember\":false}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"OPERATION_DATA_AUDIT_tb_operation_data_INSERT\",\"data\":{\"details\":{\"remember\":false},\"operationDataTrace\":{\"target\":\"tb_operation_data\",\"type\":{\"name\":\"新增\",\"value\":\"INSERT\"},\"submitData\":{\"name\":\"test-operate-data\"},\"controllerAuditType\":\"CONTROLLER_AUDIT_OperateDataController_save\"}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"CONTROLLER_AUDIT_OperateDataController_save_SUCCESS\",\"data\":{\"header\":{\"Content-Type\":\"application/json;charset=UTF-8\"},\"body\":{\"name\":\"test-operate-data\"},\"details\":{\"remember\":false}}}]}"));
+                        "{\"principal\":\"test:1\",\"type\":\"controllerAudit\",\"data\":{\"details\":{\"remember\":false},\"metadata\":{\"id\":\"save\",\"name\":\"OperateDataController_save\",\"executeStatus\":\"Success\",\"url\":\"http://localhost/operateData/save\",\"httpMethod\":\"POST\"}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"operationDataTraceAudit\",\"data\":{\"metadata\":{\"id\":\"save\",\"headers\":{\"Content-Type\":[\"application/json;charset=UTF-8\"]}},\"details\":{\"remember\":false},\"operationTrace\": {\"target\":\"tb_operation_data\",\"data\":{\"name\":\"test-operate-data\",\"principal\":\"test:1\"},\"type\":\"INSERT\"}}}]}"));
 
         content.setName("test-operate-data-update");
 
@@ -82,10 +82,10 @@ public class SpringSecurityOperationDataTest {
                 .perform(get("/actuator/auditevents"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"events\":[{\"principal\":\"test:1\",\"type\":\"AUTHENTICATION_SUCCESS\",\"data\":{\"details\":{\"remember\":false}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"OPERATION_DATA_AUDIT_tb_operation_data_INSERT\",\"data\":{\"details\":{\"remember\":false},\"operationDataTrace\":{\"target\":\"tb_operation_data\",\"submitData\":{\"name\":\"test-operate-data\"},\"type\":{\"name\":\"新增\",\"value\":\"INSERT\"},\"controllerAuditType\":\"CONTROLLER_AUDIT_OperateDataController_save\"}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"CONTROLLER_AUDIT_OperateDataController_save_SUCCESS\",\"data\":{\"header\":{\"Content-Type\":\"application/json;charset=UTF-8\"},\"body\":{\"name\":\"test-operate-data\"},\"details\":{\"remember\":false}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"OPERATION_DATA_AUDIT_tb_operation_data_UPDATE\",\"data\":{\"details\":{\"remember\":false},\"operationDataTrace\":{\"target\":\"tb_operation_data\",\"submitData\":{\"name\":\"test-operate-data-update\"},\"type\":{\"name\":\"更新\",\"value\":\"UPDATE\"},\"controllerAuditType\":\"CONTROLLER_AUDIT_OperateDataController_save\"}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"CONTROLLER_AUDIT_OperateDataController_save_SUCCESS\",\"data\":{\"header\":{\"Content-Type\":\"application/json;charset=UTF-8\"},\"body\":{\"name\":\"test-operate-data-update\"},\"details\":{\"remember\":false}}}]}"));
+                        "{\"principal\":\"test:1\",\"type\":\"controllerAudit\",\"data\":{\"details\":{\"remember\":false},\"metadata\":{\"id\":\"save\",\"name\":\"OperateDataController_save\",\"executeStatus\":\"Success\",\"url\":\"http://localhost/operateData/save\",\"httpMethod\":\"POST\"}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"operationDataTraceAudit\",\"data\":{\"metadata\":{\"id\":\"save\",\"headers\":{\"Content-Type\":[\"application/json;charset=UTF-8\"]}},\"details\":{\"remember\":false},\"operationTrace\": {\"target\":\"tb_operation_data\",\"data\":{\"name\":\"test-operate-data\",\"principal\":\"test:1\"}}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"controllerAudit\",\"data\":{\"details\":{\"remember\":false},\"metadata\":{\"id\":\"save\",\"name\":\"OperateDataController_save\",\"executeStatus\":\"Success\",\"url\":\"http://localhost/operateData/save\",\"httpMethod\":\"POST\"}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"operationDataTraceAudit\",\"data\":{\"metadata\":{\"id\":\"save\",\"headers\":{\"Content-Type\":[\"application/json;charset=UTF-8\"]}},\"details\":{\"remember\":false},\"operationTrace\": {\"target\":\"tb_operation_data\",\"data\":{\"name\":\"test-operate-data-update\",\"principal\":\"test:1\"}, \"type\":\"UPDATE\"}}}]}"));
 
         mockMvc
                 .perform(post("/operateData/delete").param("ids", content.getId().toString()).session(session))
@@ -96,11 +96,12 @@ public class SpringSecurityOperationDataTest {
                 .perform(get("/actuator/auditevents"))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{\"events\":[{\"principal\":\"test:1\",\"type\":\"AUTHENTICATION_SUCCESS\",\"data\":{\"details\":{\"remember\":false}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"OPERATION_DATA_AUDIT_tb_operation_data_INSERT\",\"data\":{\"details\":{\"remember\":false},\"operationDataTrace\":{\"target\":\"tb_operation_data\",\"submitData\":{\"name\":\"test-operate-data\"},\"type\":{\"name\":\"新增\",\"value\":\"INSERT\"},\"controllerAuditType\":\"CONTROLLER_AUDIT_OperateDataController_save\"}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"CONTROLLER_AUDIT_OperateDataController_save_SUCCESS\",\"data\":{\"header\":{\"Content-Type\":\"application/json;charset=UTF-8\"},\"body\":{\"name\":\"test-operate-data\"},\"details\":{\"remember\":false}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"OPERATION_DATA_AUDIT_tb_operation_data_UPDATE\",\"data\":{\"details\":{\"remember\":false},\"operationDataTrace\":{\"target\":\"tb_operation_data\",\"submitData\":{\"name\":\"test-operate-data-update\"},\"type\":{\"name\":\"更新\",\"value\":\"UPDATE\"},\"controllerAuditType\":\"CONTROLLER_AUDIT_OperateDataController_save\"}}}," +
-                                                  "{\"principal\":\"test:1\",\"type\":\"CONTROLLER_AUDIT_OperateDataController_save_SUCCESS\",\"data\":{\"header\":{\"Content-Type\":\"application/json;charset=UTF-8\"},\"body\":{\"name\":\"test-operate-data-update\"},\"details\":{\"remember\":false}}},{\"principal\":\"test:1\",\"type\":\"CONTROLLER_AUDIT_OperateDataController_delete_SUCCESS\",\"data\":{\"header\":{},\"parameter\":{\"ids\":[\""+content.getId()+"\"]},\"details\":{\"remember\":false}}}]}"));
-
+                        "{\"principal\":\"test:1\",\"type\":\"controllerAudit\",\"data\":{\"details\":{\"remember\":false},\"metadata\":{\"id\":\"save\",\"name\":\"OperateDataController_save\",\"executeStatus\":\"Success\",\"url\":\"http://localhost/operateData/save\",\"httpMethod\":\"POST\"}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"operationDataTraceAudit\",\"data\":{\"metadata\":{\"id\":\"save\",\"headers\":{\"Content-Type\":[\"application/json;charset=UTF-8\"]}},\"details\":{\"remember\":false},\"operationTrace\": {\"target\":\"tb_operation_data\",\"data\":{\"name\":\"test-operate-data\",\"principal\":\"test:1\"}}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"controllerAudit\",\"data\":{\"details\":{\"remember\":false},\"metadata\":{\"id\":\"save\",\"name\":\"OperateDataController_save\",\"executeStatus\":\"Success\",\"url\":\"http://localhost/operateData/save\",\"httpMethod\":\"POST\"}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"operationDataTraceAudit\",\"data\":{\"metadata\":{\"id\":\"save\",\"headers\":{\"Content-Type\":[\"application/json;charset=UTF-8\"]}},\"details\":{\"remember\":false},\"operationTrace\": {\"target\":\"tb_operation_data\",\"data\":{\"name\":\"test-operate-data-update\",\"principal\":\"test:1\"}, \"type\":\"UPDATE\"}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"controllerAudit\",\"data\":{\"details\":{\"remember\":false},\"metadata\":{\"id\":\"delete\",\"name\":\"OperateDataController_delete\",\"executeStatus\":\"Success\",\"url\":\"http://localhost/operateData/delete\",\"httpMethod\":\"POST\"}}}," +
+                        "{\"principal\":\"test:1\",\"type\":\"operationDataTraceAudit\",\"data\":{\"metadata\":{\"id\":\"delete\",\"headers\":{},\"parameters\":{\"ids\":[\"" + content.getId() + "\"]}},\"details\":{\"remember\":false},\"operationTrace\": {\"target\":\"tb_operation_data\",\"data\":{\"coll\":[" + content.getId() + "]}, \"type\":\"DELETE\"}}}]}"));
     }
 
 }

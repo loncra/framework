@@ -13,8 +13,9 @@ import io.github.loncra.framework.crypto.algorithm.cipher.OperationMode;
 import io.github.loncra.framework.crypto.algorithm.cipher.RsaCipherService;
 import io.github.loncra.framework.mybatis.MybatisAutoConfiguration;
 import io.github.loncra.framework.mybatis.config.OperationDataTraceProperties;
-import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceResolver;
-import io.github.loncra.framework.mybatis.plus.audit.MybatisPlusOperationDataTraceResolver;
+import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecordHook;
+import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRepository;
+import io.github.loncra.framework.mybatis.plus.audit.MybatisPlusOperationDataTraceRepository;
 import io.github.loncra.framework.mybatis.plus.crypto.DataAesCryptoService;
 import io.github.loncra.framework.mybatis.plus.crypto.DataRsaCryptoService;
 import io.github.loncra.framework.mybatis.plus.interceptor.DecryptInterceptor;
@@ -22,7 +23,6 @@ import io.github.loncra.framework.mybatis.plus.interceptor.EncryptInnerIntercept
 import io.github.loncra.framework.mybatis.plus.interceptor.LastModifiedDateInnerInterceptor;
 import io.github.loncra.framework.mybatis.plus.interceptor.tenant.TenantEntityHandler;
 import io.github.loncra.framework.mybatis.plus.tenant.TenantLinePolicy;
-import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecordHook;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -76,13 +76,13 @@ public class MybatisPlusAutoConfiguration {
      * @return Mybatis-Plus 操作数据追踪解析器实例
      */
     @Bean
-    @ConditionalOnMissingBean(OperationDataTraceResolver.class)
+    @ConditionalOnMissingBean(OperationDataTraceRepository.class)
     @ConditionalOnProperty(prefix = "loncra.framework.mybatis.operation-data-trace", value = "enabled", matchIfMissing = true)
-    public MybatisPlusOperationDataTraceResolver mybatisPlusOperationDataTraceRepository(
+    public MybatisPlusOperationDataTraceRepository mybatisPlusOperationDataTraceRepository(
             OperationDataTraceProperties operationDataTraceProperties,
             ObjectProvider<OperationDataTraceRecordHook> recordResolvers
     ) {
-        return new MybatisPlusOperationDataTraceResolver(operationDataTraceProperties, recordResolvers.stream().toList());
+        return new MybatisPlusOperationDataTraceRepository(operationDataTraceProperties, recordResolvers.stream().toList());
     }
 
     /**

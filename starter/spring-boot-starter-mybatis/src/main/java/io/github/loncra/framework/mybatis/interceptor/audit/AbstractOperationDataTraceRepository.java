@@ -1,8 +1,8 @@
 package io.github.loncra.framework.mybatis.interceptor.audit;
 
 import io.github.loncra.framework.commons.CastUtils;
-import io.github.loncra.framework.commons.DateUtils;
 import io.github.loncra.framework.mybatis.config.OperationDataTraceProperties;
+import io.github.loncra.framework.mybatis.domain.metadata.OperationDataTraceMetadata;
 import io.github.loncra.framework.mybatis.enumerate.OperationDataType;
 import io.github.loncra.framework.security.audit.SpringElStoragePositioningGenerator;
 import io.github.loncra.framework.security.audit.StoragePositioningGenerator;
@@ -15,21 +15,20 @@ import org.apache.ibatis.mapping.MappedStatement;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * 内存形式的操作数据留痕仓库实现
+ * 抽象的操作数据留痕仓库：按 JSQLParser 解析的 Insert/Update/Delete 生成 {@link OperationDataTraceRecord}。
+ * <p>业务载荷在嵌套的 {@link io.github.loncra.framework.mybatis.domain.metadata.OperationDataTraceMetadata}（{@code target}、{@code type}、{@code data}、可选 {@code remark}）；
+ * 记录信封含 {@code principal}（缺省本机 IP）、{@code creationTime}、可选 {@code storagePositioning}。</p>
+ * <p>若配置 {@link io.github.loncra.framework.mybatis.config.OperationDataTraceProperties#getStoragePosition()}，对每条基础记录再 SpEL 生成带 {@code storagePositioning} 的<b>复制行</b>（基础行与复制行均进入后续 {@code save}，分别走默认桶与预计算分桶，见模块 README）。</p>
+ * <p>框架<b>不</b>在 {@link #createBasicOperationDataTraceRecord} 内自动填充 {@code remark}；由注解或 {@link OperationDataTraceRecordHook} 填写。</p>
  *
  * @author maurice.chen
+ * @see OperationDataTraceRecordHook
  */
-public abstract class AbstractOperationDataTraceResolver implements OperationDataTraceResolver {
+public abstract class AbstractOperationDataTraceRepository implements OperationDataTraceRepository {
 
-    /**
-     * 日期格式化器
-     */
-    private final DateFormat dateFormat;
 
     /**
      * 操作数据追踪配置属性
@@ -51,7 +50,7 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
      *
      * @param operationDataTraceProperties 操作数据追踪配置属性
      */
-    public AbstractOperationDataTraceResolver(OperationDataTraceProperties operationDataTraceProperties) {
+    public AbstractOperationDataTraceRepository(OperationDataTraceProperties operationDataTraceProperties) {
         this(operationDataTraceProperties, Collections.emptyList());
     }
 
@@ -61,7 +60,7 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
      * @param operationDataTraceProperties 操作数据追踪配置属性
      * @param operationDataTraceRecordHooks 留痕记录扩展解析器集合（可为空）
      */
-    public AbstractOperationDataTraceResolver(
+    public AbstractOperationDataTraceRepository(
             OperationDataTraceProperties operationDataTraceProperties,
             List<OperationDataTraceRecordHook> operationDataTraceRecordHooks
     ) {
@@ -73,7 +72,6 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
         if (Objects.nonNull(operationDataTraceProperties.getStoragePosition())) {
             storagePositioningGenerator = new SpringElStoragePositioningGenerator(operationDataTraceProperties.getStoragePosition());
         }
-        this.dateFormat = new SimpleDateFormat(operationDataTraceProperties.getDateFormat());
     }
 
     @Override
@@ -199,7 +197,7 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
      *
      * @param type       操作数据类型
      * @param target     操作目标
-     * @param submitData 提交的数据
+     * @param data 提交的数据
      *
      * @return 操作数据追踪记录
      *
@@ -208,20 +206,22 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
     protected OperationDataTraceRecord createBasicOperationDataTraceRecord(
             OperationDataType type,
             String target,
-            Map<String, Object> submitData
+            Map<String, Object> data
     ) throws UnknownHostException {
 
         operationDataTraceRecordHooks.stream()
                 .filter(s -> s.isSupport(target))
                 .findFirst()
-                .ifPresent(r -> r.preCreateOperationDataTraceRecord(type, target, submitData));
+                .ifPresent(r -> r.preCreateOperationDataTraceRecord(type, target, data));
+
+        OperationDataTraceMetadata metadata = new OperationDataTraceMetadata();
+        metadata.setType(type);
+        metadata.setTarget(target);
+        metadata.setData(data);
 
         OperationDataTraceRecord record = new OperationDataTraceRecord();
         record.setPrincipal(InetAddress.getLocalHost().getHostAddress());
-        record.setType(type);
-        record.setTarget(target);
-        record.setSubmitData(submitData);
-        record.setRemark(record.getPrincipal() + StringUtils.SPACE + DateUtils.dateFormat(record.getCreationTime()) + StringUtils.SPACE + record.getType().getName());
+        record.setData(metadata);
 
         operationDataTraceRecordHooks.stream()
                 .filter(s -> s.isSupport(target))
@@ -256,15 +256,6 @@ public abstract class AbstractOperationDataTraceResolver implements OperationDat
      */
     public void setStoragePositioningGenerator(StoragePositioningGenerator storagePositioningGenerator) {
         this.storagePositioningGenerator = storagePositioningGenerator;
-    }
-
-    /**
-     * 获取日期格式化器
-     *
-     * @return 日期格式化器
-     */
-    public DateFormat getDateFormat() {
-        return dateFormat;
     }
 
     @Override

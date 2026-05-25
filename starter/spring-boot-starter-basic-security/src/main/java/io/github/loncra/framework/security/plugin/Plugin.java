@@ -51,13 +51,6 @@ public @interface Plugin {
     String type() default PluginInfo.DEFAULT_TYPE_VALUE;
 
     /**
-     * 是否审计，开启时会将本次请求的所有请求头和参数以及请求体数据存储到审计内容中
-     *
-     * @return true 是，否则 false
-     */
-    boolean audit() default false;
-
-    /**
      * 来源
      *
      * @return 来源
@@ -78,13 +71,6 @@ public @interface Plugin {
      * @return 备注
      */
     String remark() default "";
-
-    /**
-     * 是否操作数据留痕，开启时如果涉及到数据库操作的修改将会保存修改的数据到审计内容中
-     *
-     * @return true 是，否则 false
-     */
-    boolean operationDataTrace() default false;
 
     /**
      * 元数据信息，扩展内容使用

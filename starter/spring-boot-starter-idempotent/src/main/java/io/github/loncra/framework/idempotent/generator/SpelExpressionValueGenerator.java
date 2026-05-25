@@ -1,16 +1,16 @@
 package io.github.loncra.framework.idempotent.generator;
 
+import io.github.loncra.framework.commons.generator.SpringExpressionGenerator;
 import io.github.loncra.framework.idempotent.annotation.Concurrent;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * 简单的 key 生成实现
@@ -34,19 +34,9 @@ public class SpelExpressionValueGenerator implements ValueGenerator {
     private String prefix = DEFAULT_PREFIX;
 
     /**
-     * 变量截取的开始字符
-     */
-    private String openCharacter = "[";
-
-    /**
-     * 变量截取的结束字符
-     */
-    private String closeCharacter = "]";
-
-    /**
      * spring el 表达式解析器
      */
-    private final SpelExpressionParser parser = new SpelExpressionParser();
+    private final SpringExpressionGenerator springExpressionGenerator = new SpringExpressionGenerator();
 
     /**
      * 参数名称发现者，用于获取 Concurrent 注解下的方法参数细信息
@@ -59,51 +49,10 @@ public class SpelExpressionValueGenerator implements ValueGenerator {
             Method method,
             Object... args
     ) {
-
-        StandardEvaluationContext evaluationContext = createStandardEvaluationContext(method, args);
-
-        return generate(Objects.toString(getPrefix(), StringUtils.EMPTY), expression, evaluationContext);
+        return springExpressionGenerator.generate(getPrefix(), expression, getVariables(method, args));
     }
 
-    private Object generate(
-            String prefix,
-            String expression,
-            StandardEvaluationContext evaluationContext
-    ) {
-        List<String> tokens = new LinkedList<>();
-
-        String[] array = StringUtils.substringsBetween(expression, openCharacter, closeCharacter);
-
-        if (ArrayUtils.isNotEmpty(array)) {
-            tokens = Arrays.asList(array);
-        }
-
-        String result = expression;
-
-        List<String> replaceToken = new LinkedList<>();
-
-        for (String t : tokens) {
-
-            if (replaceToken.contains(t)) {
-                continue;
-            }
-
-            Object value = parser.parseExpression(t).getValue(evaluationContext, String.class);
-
-            if (Objects.nonNull(value)) {
-                result = Strings.CS.replace(result, getTokenValue(t), value.toString());
-            }
-            else {
-                result = Strings.CS.replace(result, getTokenValue(t), "null");
-            }
-
-            replaceToken.add(t);
-        }
-
-        return Strings.CS.prependIfMissing(result, prefix);
-    }
-
-    private StandardEvaluationContext createStandardEvaluationContext(
+    private Map<String, Object> getVariables(
             Method method,
             Object... args
     ) {
@@ -117,10 +66,7 @@ public class SpelExpressionValueGenerator implements ValueGenerator {
             }
         }
 
-        StandardEvaluationContext evaluationContext = new StandardEvaluationContext();
-        evaluationContext.setVariables(variables);
-
-        return evaluationContext;
+        return variables;
     }
 
     @Override
@@ -129,24 +75,17 @@ public class SpelExpressionValueGenerator implements ValueGenerator {
             Method method,
             Object... args
     ) {
+        Map<String, Object> variables = getVariables(method, args);
+        StandardEvaluationContext evaluationContext = new StandardEvaluationContext();
 
-        StandardEvaluationContext evaluationContext = createStandardEvaluationContext(method, args);
-
-        String expression = generate(StringUtils.EMPTY, condition, evaluationContext).toString();
-
-        return Boolean.TRUE.equals(parser.parseExpression(expression).getValue(evaluationContext, Boolean.class));
+        String expression = springExpressionGenerator.generate(StringUtils.EMPTY, condition, variables)
+                .toString();
+        Boolean value = springExpressionGenerator.getParser()
+                .parseExpression(expression)
+                .getValue(evaluationContext, Boolean.class);
+        return Boolean.TRUE.equals(value);
     }
 
-    /**
-     * 获取 token 值
-     *
-     * @param token token 值
-     *
-     * @return 添加开始和结束字符的 token 内容,如
-     */
-    private String getTokenValue(String token) {
-        return openCharacter + token + closeCharacter;
-    }
 
     /**
      * 获取默认的 key 前缀
@@ -164,41 +103,5 @@ public class SpelExpressionValueGenerator implements ValueGenerator {
      */
     public void setPrefix(String prefix) {
         this.prefix = prefix;
-    }
-
-    /**
-     * 获取变量截取的开始字符
-     *
-     * @return 变量截取的开始字符
-     */
-    public String getOpenCharacter() {
-        return openCharacter;
-    }
-
-    /**
-     * 设置变量截取的开始字符
-     *
-     * @param openCharacter 变量截取的开始字符
-     */
-    public void setOpenCharacter(String openCharacter) {
-        this.openCharacter = openCharacter;
-    }
-
-    /**
-     * 获取变量截取的结束字符
-     *
-     * @return 变量截取的结束字符
-     */
-    public String getCloseCharacter() {
-        return closeCharacter;
-    }
-
-    /**
-     * 设置变量截取的结束字符
-     *
-     * @param closeCharacter 变量截取的结束字符
-     */
-    public void setCloseCharacter(String closeCharacter) {
-        this.closeCharacter = closeCharacter;
     }
 }

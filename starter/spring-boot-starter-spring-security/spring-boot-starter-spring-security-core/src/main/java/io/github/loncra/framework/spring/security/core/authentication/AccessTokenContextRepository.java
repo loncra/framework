@@ -8,17 +8,20 @@ import io.github.loncra.framework.spring.security.core.authentication.config.Aut
 import io.github.loncra.framework.spring.security.core.authentication.token.AuditAuthenticationToken;
 import io.github.loncra.framework.spring.security.core.entity.AccessTokenDetails;
 import io.github.loncra.framework.spring.security.core.entity.AuditAuthenticationSuccessDetails;
+import io.github.loncra.framework.spring.web.mvc.SpringMvcUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.context.HttpRequestResponseHolder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * 借助 spring security 的 上下文仓库，扩展访问令牌，通过传 token 后完成认证工作
@@ -131,6 +134,17 @@ public interface AccessTokenContextRepository extends SecurityContextRepository 
         }
 
         return token;
+    }
+
+    default void saveAuthentication(Authentication authentication) {
+        SecurityContext securityContext = new SecurityContextImpl(authentication);
+        Optional<HttpServletRequest> request = SpringMvcUtils.getHttpServletRequest();
+        Optional<HttpServletResponse> response = SpringMvcUtils.getHttpServletResponse();
+        if (request.isPresent() && response.isPresent()) {
+            saveContext(securityContext, request.get(), response.get());
+        } else if (Objects.nonNull(getAuthenticationProperties().getAccessToken().getCache())) {
+            getCacheManager().saveSecurityContext(securityContext, getAuthenticationProperties().getAccessToken().getCache());
+        }
     }
 
     @Override

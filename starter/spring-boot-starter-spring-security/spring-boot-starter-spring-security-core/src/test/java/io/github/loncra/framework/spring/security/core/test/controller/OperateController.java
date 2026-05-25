@@ -1,6 +1,7 @@
 package io.github.loncra.framework.spring.security.core.test.controller;
 
 import io.github.loncra.framework.commons.RestResult;
+import io.github.loncra.framework.security.audit.Auditable;
 import io.github.loncra.framework.security.plugin.Plugin;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,9 +45,10 @@ public class OperateController {
         return RestResult.of("pluginTestPermsOperate");
     }
 
+    @Auditable
     @PostMapping("pluginTestPermsPostAuditOperate")
     @PreAuthorize("hasAuthority('perms[operate]') and isFullyAuthenticated()")
-    @Plugin(name = "pluginTestPermsGetAuditOperate", sources = "test", audit = true)
+    @Plugin(name = "pluginTestPermsGetAuditOperate", sources = "test")
     public RestResult<?> pluginTestPermsGetAuditOperate(HttpServletRequest request) {
         return RestResult.ofSuccess("pluginTestPermsGetAuditOperate", request.getParameterMap());
     }

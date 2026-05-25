@@ -10,10 +10,10 @@ import io.github.loncra.framework.commons.id.BasicIdentification;
 import io.github.loncra.framework.commons.id.IdEntity;
 import io.github.loncra.framework.mybatis.config.OperationDataTraceProperties;
 import io.github.loncra.framework.mybatis.enumerate.OperationDataType;
-import io.github.loncra.framework.mybatis.interceptor.audit.AbstractOperationDataTraceResolver;
+import io.github.loncra.framework.mybatis.interceptor.audit.AbstractOperationDataTraceRepository;
 import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecord;
-import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceResolver;
 import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecordHook;
+import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRepository;
 import io.github.loncra.framework.security.audit.IdAuditEvent;
 import io.github.loncra.framework.security.audit.IdStoragePositioningAuditEvent;
 import io.github.loncra.framework.security.audit.StoragePositioningAuditEvent;
@@ -35,11 +35,15 @@ import java.net.UnknownHostException;
 import java.util.*;
 
 /**
- * mybatis-plus 操作数据留痕仓库实现
+ * mybatis-plus 操作数据留痕仓库：在 {@link AbstractOperationDataTraceRepository} 基础上解析实体 ID、Wrapper 条件，
+ * 将 {@link OperationDataTraceRecord} 转为 {@link org.springframework.boot.actuate.audit.AuditEvent} 并通过 {@link org.springframework.context.ApplicationEventPublisher} 发布。
+ * <p>带 {@code storagePositioning} 的记录包装为 {@link io.github.loncra.framework.security.audit.StoragePositioningAuditEvent}；
+ * 实体 ID 场景使用 {@link EntityIdOperationDataTraceMetadata}（{@link io.github.loncra.framework.commons.CastUtils#of} 从 {@link io.github.loncra.framework.mybatis.domain.metadata.OperationDataTraceMetadata} 拷贝并 {@code setId}）。</p>
  *
  * @author maurice.chen
+ * @see io.github.loncra.framework.spring.security.core.audit.SecurityPrincipalOperationDataTraceRepository
  */
-public class MybatisPlusOperationDataTraceResolver extends AbstractOperationDataTraceResolver implements OperationDataTraceResolver, ApplicationEventPublisherAware {
+public class MybatisPlusOperationDataTraceRepository extends AbstractOperationDataTraceRepository implements OperationDataTraceRepository, ApplicationEventPublisherAware {
 
     /**
      * WHERE 条件分隔符正则表达式
@@ -52,12 +56,12 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
     private ApplicationEventPublisher applicationEventPublisher;
 
     /**
-     * 创建一个 Mybatis-Plus 操作数据追踪解析器
+     * 创建一个 Mybatis-Plus 操作数据留痕仓库
      *
      * @param operationDataTraceProperties 操作数据追踪配置属性
-     * @param operationDataTraceRecordHooks 拦截器集合
+     * @param operationDataTraceRecordHooks 留痕记录 Hook 集合
      */
-    public MybatisPlusOperationDataTraceResolver(
+    public MybatisPlusOperationDataTraceRepository(
             OperationDataTraceProperties operationDataTraceProperties,
             List<OperationDataTraceRecordHook> operationDataTraceRecordHooks
     ) {
@@ -65,12 +69,12 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
     }
 
     /**
-     * 创建一个 Mybatis-Plus 操作数据追踪解析器
+     * 创建一个 Mybatis-Plus 操作数据留痕仓库（无 Hook）
      *
      * @param operationDataTraceProperties 操作数据追踪配置属性
      * @param applicationEventPublisher    Spring 应用事件发布器
      */
-    public MybatisPlusOperationDataTraceResolver(
+    public MybatisPlusOperationDataTraceRepository(
             OperationDataTraceProperties operationDataTraceProperties,
             ApplicationEventPublisher applicationEventPublisher
     ) {
@@ -86,9 +90,7 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
      * @return 审计事件
      */
     public AuditEvent createAuditEvent(OperationDataTraceRecord record) {
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put(OperationDataTraceRecord.SUBMIT_DATA_FIELD, record.getSubmitData());
-        data.put(OperationDataTraceRecord.REMARK_FIELD, record.getRemark());
+        Map<String, Object> data = CastUtils.convertValue(record.getData(), CastUtils.MAP_TYPE_REFERENCE);
         return createAuditEvent(record, data);
     }
 
@@ -99,7 +101,6 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
             Statement statement,
             Object parameter
     ) throws Exception {
-
         if (parameter instanceof MapperMethod.ParamMap<?>) {
             MapperMethod.ParamMap<?> map = CastUtils.cast(parameter);
             Object entity = map.get(Constants.ENTITY);
@@ -115,7 +116,8 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
             OperationDataTraceRecord record = createEntityIdOperationDataTraceRecord(
                     basicIdentification,
                     insert.getTable().getName(),
-                    OperationDataType.INSERT
+                    OperationDataType.INSERT,
+                    parameter
             );
             return Collections.singletonList(record);
         }
@@ -124,7 +126,8 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
             OperationDataTraceRecord record = createEntityIdOperationDataTraceRecord(
                     basicIdentification,
                     insert.getTable().getName(),
-                    OperationDataType.INSERT
+                    OperationDataType.INSERT,
+                    parameter
             );
             return Collections.singletonList(record);
         }
@@ -143,20 +146,21 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
      *
      * @throws UnknownHostException 获取主机地址异常
      */
-    private EntityIdOperationDataTraceRecord createEntityIdOperationDataTraceRecord(
+    private OperationDataTraceRecord createEntityIdOperationDataTraceRecord(
             BasicIdentification<Object> basicIdentification,
             String tableName,
-            OperationDataType type
+            OperationDataType type,
+            Object parameter
     ) throws UnknownHostException {
         OperationDataTraceRecord result = super.createBasicOperationDataTraceRecord(
                 type,
                 tableName,
-                new LinkedHashMap<>()
+                CastUtils.convertValue(parameter, CastUtils.MAP_TYPE_REFERENCE)
         );
-        EntityIdOperationDataTraceRecord entityRecord = CastUtils.of(result, EntityIdOperationDataTraceRecord.class);
-        entityRecord.setSubmitData(CastUtils.convertValue(basicIdentification, CastUtils.MAP_TYPE_REFERENCE));
-        entityRecord.setEntityId(basicIdentification.getId());
-        return entityRecord;
+        EntityIdOperationDataTraceMetadata metadata = CastUtils.of(result.getData(), EntityIdOperationDataTraceMetadata.class);
+        metadata.setId(basicIdentification.getId());
+        result.setData(metadata);
+        return result;
     }
 
     @Override
@@ -228,19 +232,32 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
             OperationDataTraceRecord record,
             Map<String, Object> data
     ) {
+        String type = getOperationDataTraceProperties().getAuditPrefixName()
+                + CastUtils.UNDERSCORE
+                + record.getData().getTarget()
+                + CastUtils.UNDERSCORE
+                + record.getData().getType().getValue();
+        return createAuditEvent(record, type, data);
+    }
+
+    public AuditEvent createAuditEvent(
+            OperationDataTraceRecord record,
+            String auditType,
+            Map<String, Object> data
+    ) {
         if (StringUtils.isNotEmpty(record.getStoragePositioning())) {
             return new StoragePositioningAuditEvent(
                     record.getStoragePositioning(),
                     record.getCreationTime(),
                     record.getPrincipal().toString(),
-                    getOperationDataTraceProperties().getAuditPrefixName() + CastUtils.UNDERSCORE + record.getTarget() + CastUtils.UNDERSCORE + record.getType(),
+                    auditType,
                     data
             );
         }
         return new AuditEvent(
                 record.getCreationTime(),
                 record.getPrincipal().toString(),
-                getOperationDataTraceProperties().getAuditPrefixName() + CastUtils.UNDERSCORE + record.getTarget() + CastUtils.UNDERSCORE + record.getType(),
+                auditType,
                 data
         );
     }
@@ -334,10 +351,11 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
 
             if (Objects.nonNull(entity) && BasicIdentification.class.isAssignableFrom(entity.getClass())) {
                 BasicIdentification<Object> basicIdentification = CastUtils.cast(entity);
-                EntityIdOperationDataTraceRecord entityRecord = createEntityIdOperationDataTraceRecord(
+                OperationDataTraceRecord entityRecord = createEntityIdOperationDataTraceRecord(
                         basicIdentification,
                         tableName,
-                        type
+                        type,
+                        CastUtils.convertValue(entity, CastUtils.MAP_TYPE_REFERENCE)
                 );
 
                 return Collections.singletonList(entityRecord);
@@ -354,17 +372,17 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
                     OperationDataTraceRecord record = super.createBasicOperationDataTraceRecord(
                             type,
                             tableName,
-                            new LinkedHashMap<>()
+                            CastUtils.convertValue(parameter, CastUtils.MAP_TYPE_REFERENCE)
                     );
 
-                    EntityIdOperationDataTraceRecord entityRecord = CastUtils.of(record, EntityIdOperationDataTraceRecord.class);
-
-                    entityRecord.setEntityId(entityId);
+                    EntityIdOperationDataTraceMetadata metadata = CastUtils.of(record.getData(), EntityIdOperationDataTraceMetadata.class);
+                    metadata.setId(entityId);
                     if (OperationDataType.UPDATE.equals(type)) {
-                        Map<String, Object> submitData = getUpdateModifiedMap(updateWrapper.getSqlSet(), parameter);
-                        entityRecord.setSubmitData(submitData);
+                        Map<String, Object> modifiedMap = getUpdateModifiedMap(updateWrapper.getSqlSet(), parameter);
+                        metadata.setData(modifiedMap);
                     }
-                    return Collections.singletonList(entityRecord);
+                    record.setData(metadata);
+                    return Collections.singletonList(record);
                 }
             }
         }
@@ -374,7 +392,8 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
                 OperationDataTraceRecord record = createEntityIdOperationDataTraceRecord(
                         basicIdentification,
                         tableName,
-                        type
+                        type,
+                        parameter
                 );
                 return Collections.singletonList(record);
             }
@@ -398,9 +417,10 @@ public class MybatisPlusOperationDataTraceResolver extends AbstractOperationData
                     delete.getTable().getName(),
                     new LinkedHashMap<>()
             );
-            EntityIdOperationDataTraceRecord entityRecord = CastUtils.of(record, EntityIdOperationDataTraceRecord.class);
-            entityRecord.setEntityId(parameter);
-            return Collections.singletonList(entityRecord);
+            EntityIdOperationDataTraceMetadata metadata = CastUtils.of(record.getData(), EntityIdOperationDataTraceMetadata.class);
+            metadata.setId(parameter);
+            record.setData(metadata);
+            return Collections.singletonList(record);
         }
 
         return createUpdateOrDeleteRecord(delete.getTable().getName(), OperationDataType.DELETE, parameter);

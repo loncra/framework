@@ -1,10 +1,10 @@
 # spring-boot-starter-mybatis
 
-`spring-boot-starter-mybatis` 是 loncra framework 对 **MyBatis 3** 的薄封装：在**不**替代你选用 `mybatis-spring-boot-starter` / 自建 `SqlSessionFactory` 的前提下，提供 **TypeHandler**（JSON、按名/值枚举）、**ResultSet 后处理拦截器**（解决 JSON 集合**泛型擦除**问题），以及**写操作**（`INSERT/UPDATE/DELETE`）的 **JSQLParser** 级留痕**拦截器** + **可插拔的 `OperationDataTraceResolver` 契约**。
+`spring-boot-starter-mybatis` 是 loncra framework 对 **MyBatis 3** 的薄封装：在**不**替代你选用 `mybatis-spring-boot-starter` / 自建 `SqlSessionFactory` 的前提下，提供 **TypeHandler**（JSON、按名/值枚举）、**ResultSet 后处理拦截器**（解决 JSON 集合**泛型擦除**问题），以及**写操作**（`INSERT/UPDATE/DELETE`）的 **JSQLParser** 级留痕**拦截器** + **可插拔的 `OperationDataTraceRepository` 契约**。
 
-> **依赖关系**：`JsonCollectionGenericType` 等注解在 **`commons`** 包；**存储定位**相关（`StoragePositionProperties`、`SpringElStoragePositioningGenerator`）在 **`spring-boot-starter-basic-security`（传递依赖）**；`AbstractOperationDataTraceResolver` 直接依赖 `security` 的审计/定位类。`OperationDataTraceProperties` **未**在 `MybatisAutoConfiguration` 中 `Enable`；若**仅**使用本模块 + 手写 `Resolver`，需在应用或配置类上 **`@EnableConfigurationProperties(io.github.loncra.framework.mybatis.config.OperationDataTraceProperties.class)`**。
+> **依赖关系**：`JsonCollectionGenericType` 等注解在 **`commons`** 包；**存储定位**相关（`StoragePositionProperties`、`SpringElStoragePositioningGenerator`）在 **`spring-boot-starter-basic-security`（传递依赖）**；`AbstractOperationDataTraceRepository` 直接依赖 `security` 的审计/定位类。`OperationDataTraceProperties` **未**在 `MybatisAutoConfiguration` 中 `Enable`；若**仅**使用本模块 + 手写 `Repository`，需在应用或配置类上 **`@EnableConfigurationProperties(io.github.loncra.framework.mybatis.config.OperationDataTraceProperties.class)`**。
 
-> **与 MyBatis-Plus**：默认注册 `MybatisPlusOperationDataTraceResolver` 的是 `spring-boot-starter-mybatis-plus`，**不是**本 JAR。纯 MyBatis 下需**自行实现** `OperationDataTraceResolver`（可继承 `AbstractOperationDataTraceResolver`）。
+> **与 MyBatis-Plus**：默认注册 `MybatisPlusOperationDataTraceRepository` 的是 `spring-boot-starter-mybatis-plus`，**不是**本 JAR。纯 MyBatis 下需**自行实现** `OperationDataTraceRepository`（可继承 `AbstractOperationDataTraceRepository`）。
 
 ## 模块定位
 
@@ -14,8 +14,8 @@
 | `NameValueEnumTypeHandler` | 基于 `ValueEnum` / `NameEnum` 的 DB 值与 Java 枚举互转；读库走 `ValueEnum.ofEnum` / `NameEnum.ofEnum`；写库在 `jdbcType` 为 null 时对标量做字符串或 ordinal 等分支（见源码） |
 | `AbstractJsonCollectionPostInterceptor` / `JacksonJsonCollectionPostInterceptor` | 在 `Executor#query` 返回**之后**，对「JSON 列 → `List`/`Set`」常见的 **`List<Map>` 误当 `List<POJO>`** 问题做二次映射；详见下文《`@JsonCollectionGenericType`：要解决什么问题》 |
 | `OperationDataTraceInterceptor` | 在 `Executor#update` 执行**成功**后：仅当**返回为 `Integer` 且 &gt; 0** 且为 `INSERT`/`UPDATE`/`DELETE` 时，解析 SQL、生成 `OperationDataTraceRecord` 列表；再按表名对每条记录调用匹配 Hook 的 **`preSaveOperationDataTraceRecord`**，最后 **`saveOperationDataTraceRecord`** |
-| `AbstractOperationDataTraceResolver` | 按 `Insert/Update/Delete` 生成 `OperationDataTraceRecord`：`target`＝表名；`submitData`＝`CastUtils` 将参数转 `Map`；`principal` 缺省为本机 IP；`remark` 为「IP + 时间 + 操作中文名」。若配置 `OperationDataTraceProperties#storagePosition` 则通过 `SpringElStoragePositioningGenerator` 为每条**基础**记录**再**生成**带** `storagePositioning` 的**复制**行。构造可传入 `List<OperationDataTraceRecordHook>`，或仅 `OperationDataTraceProperties` 单参构造（等价于 Hook 列表**为空**） |
-| `OperationDataTraceRecordHook` | **可选扩展**：构建阶段 `preCreate…` / `postCreate…` 对命中表名**各取第一个** Hook（`findFirst`）；**保存前** `preSave…` 在 `OperationDataTraceInterceptor` 里、**写库成功后**且调用 `saveOperationDataTraceRecord` **之前**触发，**同一表**上所有 `isSupport` 为 true 的 Hook **全部**执行，且对同表每条记录各调用一次（见源码分组与 `forEach` 顺序） |
+| `AbstractOperationDataTraceRepository` | 按 `Insert/Update/Delete` 生成 `OperationDataTraceRecord`：业务字段在嵌套 **`OperationDataTraceMetadata`**（`target`＝表名、`type`、`data`＝参数 Map、可选 `remark`）；`principal` 缺省为本机 IP。**框架不在底层自动填充 `remark`**。若配置 `OperationDataTraceProperties#storagePosition` 则通过 `SpringElStoragePositioningGenerator` 为每条**基础**记录**再**生成带 `storagePositioning` 的**复制**行（基础行 + 复制行均进入 `save`，见下文《storagePosition 分桶》）。构造可传入 `List<OperationDataTraceRecordHook>`，或仅 `OperationDataTraceProperties` 单参构造（等价于 Hook 列表**为空**） |
+| `OperationDataTraceRecordHook` | **可选扩展**：构建阶段 `preCreate…` / `postCreate…` 对命中表名**各取第一个** Hook（`findFirst`）；**保存前** `preSave…` 在 `OperationDataTraceInterceptor` 里、**写库成功后**且调用 `saveOperationDataTraceRecord` **之前**触发，**同一表**上所有 `isSupport` 为 true 的 Hook **全部**执行，且对同表每条记录各调用一次 |
 
 ## 依赖说明
 
@@ -32,7 +32,7 @@
 | `commons` | `CastUtils`、`@JsonCollectionGenericType`、异常与枚举基类等 |
 | `mybatis` 3.5.16、`mybatis-spring` 3.0.4 | 见上文：不含 `mybatis-spring-boot-starter`，需自行提供 `SqlSessionFactory` 与 `Interceptor` 挂链方式 |
 | `spring-boot-starter` | 自动配置基础设施 |
-| `spring-boot-starter-basic-security` | 解析器对 `StoragePositioningGenerator` 的依赖等 |
+| `spring-boot-starter-basic-security` | 仓库对 `StoragePositioningGenerator` 的依赖等 |
 | `jsqlparser` 5.0 | 留痕拦截中 `CCJSqlParserUtil.parse` |
 
 ## 自动配置
@@ -41,20 +41,21 @@
 - 开关：`loncra.framework.mybatis.enabled`（`matchIfMissing` 为 `true`）。
 - 本类 `@Bean`：
   - 始终：Bean 名 `jacksonCollectionPostInterceptor`，类型为 `JacksonJsonCollectionPostInterceptor`。
-  - 当容器中存在 `OperationDataTraceResolver` 且 `loncra.framework.mybatis.operation-data-trace.enabled` 为 `true`（**默认**）时：再注册 `OperationDataTraceInterceptor`。
-- **不会**注册**默认的** `OperationDataTraceResolver`，**也不会**对该模块单独 `@EnableConfigurationProperties(OperationDataTraceProperties.class)`。
-- 若**额外**引入 `spring-boot-starter-mybatis-plus`：其 `MybatisPlusAutoConfiguration` 在「**无**自定义 `OperationDataTraceResolver`」时注册 `MybatisPlusOperationDataTraceResolver`，并 `@EnableConfigurationProperties` 包含 `OperationDataTraceProperties`，在 MP 的开关为 `true` 时，留痕解析器**开箱**可用。
+  - 当容器中存在 `OperationDataTraceRepository` 且 `loncra.framework.mybatis.operation-data-trace.enabled` 为 `true`（**默认**）时：再注册 `OperationDataTraceInterceptor`。
+- **不会**注册**默认的** `OperationDataTraceRepository`，**也不会**对该模块单独 `@EnableConfigurationProperties(OperationDataTraceProperties.class)`。
+- 若**额外**引入 `spring-boot-starter-mybatis-plus`：其 `MybatisPlusAutoConfiguration` 在「**无**自定义 `OperationDataTraceRepository`」时注册 `MybatisPlusOperationDataTraceRepository`，并 `@EnableConfigurationProperties` 包含 `OperationDataTraceProperties`，在 MP 的开关为 `true` 时，留痕仓库**开箱**可用。
 
 ## 包结构（概要）
 
 | 位置 | 说明 |
 | --- | --- |
 | `MybatisAutoConfiguration` | 上节 |
-| `config/OperationDataTraceProperties` | 前缀 `loncra.framework.mybatis.operation-data-trace`：`auditPrefixName`、`dateFormat`、`storagePosition`（`StoragePositionProperties` 见 security 模块） |
-| `interceptor/audit` | `OperationDataTraceInterceptor`、`OperationDataTraceResolver`、`AbstractOperationDataTraceResolver`、`OperationDataTraceRecord`、`OperationDataTraceRecordHook`（留痕钩子，见下文） |
+| `config/OperationDataTraceProperties` | 前缀 `loncra.framework.mybatis.operation-data-trace`：`auditPrefixName`、`storagePosition`（`StoragePositionProperties` 见 security 模块） |
+| `domain/metadata/OperationDataTraceMetadata` | 留痕业务载荷：`target`、`type`、`data`、`remark`；常量 `OPERATION_DATA_TRACE_DATA_FIELD` = `"operationTrace"` |
+| `interceptor/audit` | `OperationDataTraceInterceptor`、`OperationDataTraceRepository`、`AbstractOperationDataTraceRepository`、`OperationDataTraceRecord`、`OperationDataTraceRecordHook` |
 | `interceptor/json`、`support` | `AbstractJsonCollectionPostInterceptor`；`JacksonJsonCollectionPostInterceptor` 在 `@Intercepts` 中固定 `Executor#query` 四参签名 |
 | `handler` | `JacksonJsonTypeHandler`、`NameValueEnumTypeHandler` |
-| `enumerate/OperationDataType` | 与 `INSERT`/`UPDATE`/`DELETE` 对应的中文名等，供 `remark` 等使用 |
+| `enumerate/OperationDataType` | 与 `INSERT`/`UPDATE`/`DELETE` 对应的中文名等 |
 
 ## 写操作留痕：链路与实现细节
 
@@ -64,24 +65,52 @@
 4. 根据 `MappedStatement#getSqlCommandType` 过滤，仅 `INSERT` / `UPDATE` / `DELETE`。
 5. `getBoundSql` 取可执行 SQL，以正则 `REMOVE_ESCAPE_REG`（`\\.|\\n|\\t`）**替换**为**空格**后 `CCJSqlParserUtil.parse`。
 6. 调用 `createOperationDataTraceRecord(mappedStatement, statement, parameter)`。
-7. **非**空时：按 **`target`（表名）** 分组，对所有 **`isSupport(表名)`** 的 `OperationDataTraceRecordHook` 依次调用 **`preSaveOperationDataTraceRecord`**（同表每条记录都会收到钩子回调；多 Hook **全部**参与，与构建阶段 `findFirst` 不同）；再调用 `saveOperationDataTraceRecord(records)`。
+7. **非**空时：按 **`record.getData().getTarget()`（表名）** 分组，对所有 **`isSupport(表名)`** 的 `OperationDataTraceRecordHook` 依次调用 **`preSaveOperationDataTraceRecord`**；再调用 `saveOperationDataTraceRecord(records)`。
 
-`AbstractOperationDataTraceResolver` 对 `Insert/Update/Delete` 仅取 `getTable().getName()` 作为**表名**；`submitData` 为**全参**转 `Map`（复杂 Mapper 入参**结构**以 `CastUtils` 实际行为为准）。`principal` 为 `InetAddress.getLocalHost().getHostAddress()`。若需**用户身份**，应**在子类**覆盖记录构造，或**换用** `MybatisPlusOperationDataTraceResolver`、安全子类增强解析器（见 `spring-boot-starter-spring-security-core` 等模块）。
+`AbstractOperationDataTraceRepository` 对 `Insert/Update/Delete` 仅取 `getTable().getName()` 作为 **metadata.target**；**metadata.data** 为全参转 `Map`。`principal` 为 `InetAddress.getLocalHost().getHostAddress()`。若需**用户身份**或**与 HTTP 审计合并**，应使用 `MybatisPlusOperationDataTraceRepository`、`SecurityPrincipalOperationDataTraceRepository`（见 mybatis-plus / spring-security-core）。
+
+### `OperationDataTraceRecord` 与 `OperationDataTraceMetadata`
+
+| 层级 | 字段 | 说明 |
+| --- | --- | --- |
+| `OperationDataTraceRecord` | `creationTime`、`principal`、`storagePositioning` | 审计「信封」 |
+| `OperationDataTraceRecord.data` | `OperationDataTraceMetadata` | 业务载荷 |
+| `OperationDataTraceMetadata` | `target`、`type`、`data`、`remark` | 表名、操作类型、参数 Map、**可选**备注（框架不自动填） |
+
+### storagePosition 分桶
+
+配置 `operation-data-trace.storage-position` 后：
+
+1. 每条**基础** record 经 `SpringElStoragePositioningGenerator.generatePositioning(record)` 预计算分桶名，克隆为带 `storagePositioning` 的**复制行**。
+2. 返回列表 = **基础行 + 复制行**（均为预期，会各发一次审计事件）。
+3. **复制行**：`save` 时包装为 `StoragePositioningAuditEvent`，ES/Mongo **直接使用** `storagePositioning` 作为索引/集合名。
+4. **基础行**：无 `storagePositioning`，落库时由 **`loncra.framework.security.audit.storage-position`** 对 `IdAuditEvent` 再算默认桶。
+
+两套 `storage-position` 的 SpEL 变量可能不同（如 record 上 `#creationTime`、审计事件上 `#timestamp`），业务侧应对齐表达式。详见 `spring-boot-starter-basic-security` README《storage-position 存储定位》。
 
 ### 留痕记录钩子：`OperationDataTraceRecordHook`
 
-实现 **`io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecordHook`** 并注册为 Spring Bean 即可扩展留痕行为：
-
 | 阶段 | 调用时机 | 与多个 Bean 的关系 |
 |------|----------|-------------------|
-| `preCreateOperationDataTraceRecord` | `AbstractOperationDataTraceResolver#createBasicOperationDataTraceRecord` 内，填充 `OperationDataTraceRecord` 之前 | 对 `submitData` 等**每个方法各自** `findFirst`，同类钩子**至多一个**生效 |
-| `postCreateOperationDataTraceRecord` | 默认字段填完后、进入存储定位复制与 `save` 之前 | 同上 |
-| `preSaveOperationDataTraceRecord` | `OperationDataTraceInterceptor` 中，**数据库 update 已成功**且已生成**完整** `records` 列表后、调用 `saveOperationDataTraceRecord` **之前** | 按表分组后，**所有** `isSupport(表名)` 的 Hook **都会**被执行；对每个 Hook，该表对应的**每条**记录各调一次 |
+| `preCreateOperationDataTraceRecord` | `AbstractOperationDataTraceRepository#createBasicOperationDataTraceRecord` 内，填充 Metadata 之前 | 对 `data` Map **每个方法各自** `findFirst` |
+| `postCreateOperationDataTraceRecord` | 默认 `principal` 等填完后、storagePosition 复制与 `save` 之前 | 同上 |
+| `preSaveOperationDataTraceRecord` | 数据库 update 已成功且已生成完整 `records` 后、`saveOperationDataTraceRecord` **之前** | **所有** `isSupport(表名)` 的 Hook **都会**执行 |
 
-- **纯 MyBatis**：自定义 `AbstractOperationDataTraceResolver` 子类时，向父类构造传入 `List<OperationDataTraceRecordHook>`，或父类**仅**传 `OperationDataTraceProperties`（无钩子）。
-- **MyBatis-Plus / Security-Core**：默认 Bean 通过 `ObjectProvider<OperationDataTraceRecordHook>` **自动聚合**所有实现，见 `MybatisPlusAutoConfiguration`、`SecurityOperationDataTraceRepositoryAutoConfiguration`；`OperationDataTraceResolver#getOperationDataTraceRecordHooks()` 需供拦截器调用 **`preSave`**（默认由 `AbstractOperationDataTraceResolver` 返回构造时注入的列表）。
+- **纯 MyBatis**：自定义 `AbstractOperationDataTraceRepository` 子类时，向父类构造传入 `List<OperationDataTraceRecordHook>`。
+- **MyBatis-Plus / Security-Core**：`ObjectProvider<OperationDataTraceRecordHook>` 自动聚合 Bean；`OperationDataTraceRepository#getOperationDataTraceRecordHooks()` 供拦截器调用 `preSave`。
 
-不改动 `OperationDataTraceResolver` 主流程的前提下，适用于按表脱敏 `submitData`、改写 `record`、以及在**即将写入审计仓库/发事件前**做最后一轮加工。
+## 迁移说明（Resolver → Repository / 扁平 Record → Metadata）
+
+| 旧 | 新 |
+| --- | --- |
+| `OperationDataTraceResolver` | `OperationDataTraceRepository` |
+| `AbstractOperationDataTraceResolver` | `AbstractOperationDataTraceRepository` |
+| `MybatisPlusOperationDataTraceResolver` | `MybatisPlusOperationDataTraceRepository` |
+| `SecurityPrincipalOperationDataTraceResolver` | `SecurityPrincipalOperationDataTraceRepository` |
+| `record.getTarget()` / `getSubmitData()` / `getRemark()` | `record.getData().getTarget()` / `getData()` / `getRemark()` |
+| `EntityIdOperationDataTraceRecord` | `EntityIdOperationDataTraceMetadata`（extends `OperationDataTraceMetadata` + `id`） |
+| `AuditEvent.data` 键 `submitData` / `SUBMIT_DATA_FIELD` | `operationTrace` / `OperationDataTraceMetadata.OPERATION_DATA_TRACE_DATA_FIELD` |
+| 框架自动 `remark`（IP+时间+操作名） | **已移除**；由 `@Auditable` / `@OperationDataTrace` 或 Hook 填写 |
 
 ## 配置项速查
 
@@ -95,10 +124,9 @@
 
 | 属性 | 说明 | 默认 |
 | --- | --- | --- |
-| `enabled` | 是否注册 `OperationDataTraceInterceptor`（仍要求容器内已存在 `OperationDataTraceResolver`） | `true` |
-| `audit-prefix-name` | 与审计事件类型等拼接的**业务前缀**（在 MP 等实现中常用） | `OPERATION_DATA_AUDIT` |
-| `dateFormat` | 抽象类中 `SimpleDateFormat` 使用的模式 | 与 `DateUtils.DEFAULT_DATE_TIME_FORMATTER_PATTERN` 默认一致 |
-| `storagePosition` | 非空时创建 `SpringElStoragePositioningGenerator`；`record` 作为 SpEL 根，生成 `storagePositioning` **额外**记录行 | 可选 |
+| `enabled` | 是否注册 `OperationDataTraceInterceptor`（仍要求容器内已存在 `OperationDataTraceRepository`） | `true` |
+| `audit-prefix-name` | 与审计事件 type 拼接的业务前缀（MP 实现中常用） | `OPERATION_DATA_AUDIT` |
+| `storage-position` | 非空时对每条基础 record SpEL 生成 `storagePositioning` **复制行** | 可选 |
 
 ## `@JsonCollectionGenericType`：要解决什么问题
 
@@ -109,65 +137,56 @@
 - 源码里你写的是 `List<DeviceInfo> devices` 这类**强类型**声明。
 - 从 JDBC 读出的是字符串，经 Jackson 反序列化成集合时，在**缺少完整泛型上下文**（或 TypeHandler 只按「外层」类型处理）的情况下，运行时集合里每个元素往往是 **`LinkedHashMap`**（或其它 `Map`），整体类型表现为 **`List<Map<String,Object>>`**，而**不是** `List<DeviceInfo>`。
 - MyBatis 把结果填进实体字段时，**引用**可以塞进 `List` 字段里，但**元素**仍是 `Map`。编译期看是「`List<DeviceInfo>`」，运行期却是「`List` 里装着 `Map`」。
-- 业务代码在拿到实体后若写：`devices.get(0).getSerialNumber()`（或任意只在 `DeviceInfo` 上存在的方法），会在运行时报错（典型为 **`ClassCastException`**，或表现为「`Map` 上没有该方法」），因为 `get(0)` 实际返回的是 **`Map`**，不是 `DeviceInfo`。
+- 业务代码在拿到实体后若写：`devices.get(0).getSerialNumber()`，会在运行时报错，因为 `get(0)` 实际返回的是 **`Map`**，不是 `DeviceInfo`。
 
-**`@JsonCollectionGenericType` 的作用就是：在框架里把「集合元素应该是哪种具体类型」说清楚，并在查询结果映射完成后，再做一步「把 `Map`（或中间形态）转成真正的元素类型」**，使运行期集合里的对象**确实是**你在注解里声明的类型，业务层按 `List<业务类型>` 使用字段、调用方法时**与编译期一致**，不再踩 `Map` 陷阱。
+**`@JsonCollectionGenericType` 的作用**：在查询结果映射完成后，把 `Map` 转成注解 `value()` 声明的元素类型。
 
-- 注解定义在 **`commons`**：`io.github.loncra.framework.commons.annotation.JsonCollectionGenericType`，成员 **`value()`** 即**集合元素**的 Class（例如 `DeviceInfo.class`）。
-- **`JacksonJsonCollectionPostInterceptor`**（挂在 `Executor#query` 上）在**一次查询执行完毕、得到结果对象之后**，扫描 `ResultMap` 对应实体上、标注了 `@JsonCollectionGenericType` 的**可读属性**（字段或 getter 上的注解均可）；若元素类型是 `ValueEnum` / `NameEnum`，则与 `NameValueEnumTypeHandler` 的取值逻辑配合转成枚举；否则用 Jackson 的 **`CollectionType`** 对当前集合做一次 **`convertValue`**，把元素从 `Map` 等**还原**成 `value()` 指定的类型，再**写回**实体属性（优先 setter，无 setter 则写字段）。
-- **只作用**在**本次查询的返回值为 `Collection`** 的场景：若 Mapper 返回的是**单条**实体（非 `List`），拦截器首行即不进入集合后处理逻辑。
-- 集合字段在源码中须声明为 **`List` 或 `Set`**；其它 `Collection` 子类会按源码抛 `SystemException`（见 `JacksonJsonCollectionPostInterceptor#doMappingResult`）。
+- 注解在 **`commons`**：`io.github.loncra.framework.commons.annotation.JsonCollectionGenericType`。
+- **`JacksonJsonCollectionPostInterceptor`** 在 `Executor#query` 返回后扫描带注解的属性并 `convertValue` 写回实体。
 
 ## 在 Mapper / 实体上使用 TypeHandler
 
-- **纯 MyBatis**：在 `@Result`、Mapper XML 的 `typeHandler`，或**全局** `type-handlers-package` 中注册 `JacksonJsonTypeHandler` 或 `NameValueEnumTypeHandler`（`JacksonJsonTypeHandler(Class<T> type)` 的泛型在 MyBatis 3 中常通过**子类**或**注册工厂**指定，与项目既有 TypeHandler 写法**一致**即可）。
-- **MyBatis-Plus**：可用 `@TableField(typeHandler = ...)`（见 MP 文档）。
-
-**示例**（**MP** 注解，仅作**风格**说明；**包名**以**实际**类为准）：
+- **纯 MyBatis**：在 `@Result`、Mapper XML 的 `typeHandler`，或**全局** `type-handlers-package` 中注册 handler。
+- **MyBatis-Plus**：`@TableField(typeHandler = ...)`。
 
 ```java
 import io.github.loncra.framework.commons.annotation.JsonCollectionGenericType;
 import io.github.loncra.framework.mybatis.handler.JacksonJsonTypeHandler;
-import com.baomidou.mybatisplus.annotation.TableField; // 使用 MP 时
+import com.baomidou.mybatisplus.annotation.TableField;
 
 public class UserEntity {
 
   @JsonCollectionGenericType(DeviceInfo.class)
-  @TableField(typeHandler = JacksonJsonTypeHandler.class) // 仅 MyBatis-Plus
+  @TableField(typeHandler = JacksonJsonTypeHandler.class)
   private List<DeviceInfo> devices;
 }
 ```
 
-## 纯 MyBatis 实现 `OperationDataTraceResolver`（摘抄需对齐 import）
+## 纯 MyBatis 实现 `OperationDataTraceRepository`
 
 ```java
 import io.github.loncra.framework.mybatis.config.OperationDataTraceProperties;
-import io.github.loncra.framework.mybatis.interceptor.audit.AbstractOperationDataTraceResolver;
-import io.github.loncra.framework.mybatis.interceptor.audit.OperationDataTraceRecord;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.boot.actuate.audit.AuditEvent;
-import org.springframework.boot.actuate.audit.listener.AuditApplicationEvent;
+import io.github.loncra.framework.mybatis.interceptor.audit.AbstractOperationDataTraceRepository;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties(OperationDataTraceProperties.class)
 /* @Component
-public class DemoOperationDataTraceResolver extends AbstractOperationDataTraceResolver { ... } */
-// 在 @Component 类中：构造器 super(properties) 或 super(properties, hookList)；实现 save... 中发布 AuditApplicationEvent 或写入你方审计表。
+public class DemoOperationDataTraceRepository extends AbstractOperationDataTraceRepository {
+    // super(properties) 或 super(properties, hookList)
+    // 实现 saveOperationDataTraceRecord：发布 AuditApplicationEvent 或写入审计仓库
+} */
 ```
-
-> 上例仅说明**配置属性启用**与**类继承关系**；`IdAuditEvent`、`AuditApplicationEvent` 等**实际**包名与**构造**以你工程中的 `spring-boot-actuate` 与**安全/审计**模块 API 为准；在实现 `saveOperationDataTraceRecord` 时自行选用事件或落库。发布前在 IDE 中**核对 import** 与编译通过。
 
 ## 与 `spring-boot-starter-mybatis-plus` 的衔接
 
-- 引入 `spring-boot-starter-mybatis-plus` 时，在 `@ConditionalOnMissingBean(OperationDataTraceResolver.class)` 下**自动**注册 `MybatisPlusOperationDataTraceResolver`（**并**启用 `OperationDataTraceProperties`）。
-- 该实现会发布 Spring 审计相关事件、解析实体与 `Wrapper` 等，**比**「`AbstractOperationDataTraceResolver` + 全参转 `Map`」**更**多一层业务信息；细节见 mybatis-plus 子模块与 `MybatisPlusOperationDataTraceResolver` 源码。
+- 引入 MP 时在 `@ConditionalOnMissingBean(OperationDataTraceRepository.class)` 下**自动**注册 `MybatisPlusOperationDataTraceRepository`。
+- 该实现发布 Spring 审计事件、解析实体与 `Wrapper`、使用 `EntityIdOperationDataTraceMetadata`；细节见 mybatis-plus 子模块 README。
 
 ## 注意事项
 
-- 无 `OperationDataTraceResolver` **Bean** → 无 `OperationDataTraceInterceptor` **Bean** → 无**写操作**自动留痕，但 `JacksonJsonCollectionPostInterceptor` **仍**会注册；二者都需 `SqlSessionFactory` **插件链**中挂上对应 `Interceptor`（通常由 `mybatis-spring-boot-starter` 自动收集）。
-- **JSQLParser** 无法解析的 SQL 会在 `parse` 时**抛错**；复杂 SQL 宜在**自定义** `createOperationDataTraceRecord` 中**兜底**或**关闭** `operation-data-trace.enabled` / **不**提供 Resolver。
-- `REMOVE_ESCAPE_REG` 只去掉反斜杠转义/换行/制表，**不**代表与数据库**最终**执行计划完全一致。
-- **仅**使用本 starter、且使用 `AbstractOperationDataTraceResolver` 时，需在应用侧 **显式** `@EnableConfigurationProperties(OperationDataTraceProperties.class)` 以便构造注入**生效**（mybatis-plus 的自动配置会代你启用**一次**）。
-- 生产环境建议在子类/替代实现中把 `principal` 从**本机 IP** 换为**当前**登录用户，并在落库/审计前对 `submitData` 做**脱敏**（密码、Token 等）；也可通过 **`OperationDataTraceRecordHook.postCreate…`** 或 **`preSave…`** 统一改写 `record`（与自定义 `OperationDataTraceResolver` 组合使用）。
+- 无 `OperationDataTraceRepository` **Bean** → 无 `OperationDataTraceInterceptor` → 无写操作自动留痕；`JacksonJsonCollectionPostInterceptor` **仍**会注册。
+- **JSQLParser** 无法解析的 SQL 会在 `parse` 时**抛错**；复杂 SQL 宜自定义兜底或关闭 `operation-data-trace.enabled`。
+- 纯 MyBatis + `AbstractOperationDataTraceRepository` 时需 **`@EnableConfigurationProperties(OperationDataTraceProperties.class)`**（MP 自动配置会代启用）。
+- 生产环境建议用 Security 子类或 Hook 将 `principal` 换为登录用户，并对 `record.getData().getData()` 脱敏。

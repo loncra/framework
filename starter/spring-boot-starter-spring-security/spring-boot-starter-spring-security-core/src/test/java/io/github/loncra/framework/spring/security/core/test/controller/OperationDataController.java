@@ -1,7 +1,9 @@
 package io.github.loncra.framework.spring.security.core.test.controller;
 
 import io.github.loncra.framework.commons.RestResult;
+import io.github.loncra.framework.security.audit.Auditable;
 import io.github.loncra.framework.security.plugin.Plugin;
+import io.github.loncra.framework.spring.security.core.audit.OperationDataTrace;
 import io.github.loncra.framework.spring.security.core.test.entity.OperationDataEntity;
 import io.github.loncra.framework.spring.security.core.test.service.OperationDataService;
 import org.springframework.web.bind.annotation.*;
@@ -24,8 +26,10 @@ public class OperationDataController {
         this.operationDataService = operationDataService;
     }
 
+    @Auditable
+    @OperationDataTrace
+    @Plugin(name = "save")
     @PostMapping("save")
-    @Plugin(name = "save", audit = true, operationDataTrace = true)
     public RestResult<Integer> save(
             @RequestBody
             OperationDataEntity operationDataEntity
@@ -34,12 +38,15 @@ public class OperationDataController {
         return RestResult.ofSuccess(operationDataEntity.getId());
     }
 
+    @Auditable
+    @OperationDataTrace
+    @Plugin(name = "delete")
     @PostMapping("delete")
-    @Plugin(name = "delete", audit = true, operationDataTrace = true)
     public RestResult<?> delete(
             @RequestParam
             List<Integer> ids
     ) {
+        operationDataService.deleteById(ids);
         return RestResult.of("删除 " + ids.size() + " 记录成功");
     }
 

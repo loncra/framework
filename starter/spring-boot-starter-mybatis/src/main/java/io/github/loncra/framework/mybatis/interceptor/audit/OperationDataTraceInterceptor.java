@@ -47,15 +47,15 @@ public class OperationDataTraceInterceptor implements Interceptor {
     /**
      * 操作数据追踪解析器
      */
-    private final OperationDataTraceResolver operationDataTraceResolver;
+    private final OperationDataTraceRepository operationDataTraceRepository;
 
     /**
      * 创建一个操作数据追踪拦截器
      *
-     * @param operationDataTraceResolver 操作数据追踪解析器
+     * @param operationDataTraceRepository 操作数据追踪解析器
      */
-    public OperationDataTraceInterceptor(OperationDataTraceResolver operationDataTraceResolver) {
-        this.operationDataTraceResolver = operationDataTraceResolver;
+    public OperationDataTraceInterceptor(OperationDataTraceRepository operationDataTraceRepository) {
+        this.operationDataTraceRepository = operationDataTraceRepository;
     }
 
     /**
@@ -92,18 +92,18 @@ public class OperationDataTraceInterceptor implements Interceptor {
 
         Statement statement = CCJSqlParserUtil.parse(sql);
 
-        List<OperationDataTraceRecord> records = operationDataTraceResolver.createOperationDataTraceRecord(mappedStatement, statement, parameter);
+        List<OperationDataTraceRecord> records = operationDataTraceRepository.createOperationDataTraceRecord(mappedStatement, statement, parameter);
 
         if (CollectionUtils.isNotEmpty(records)) {
             Map<String, List<OperationDataTraceRecord>> grouping = records.stream()
-                    .collect(Collectors.groupingBy(OperationDataTraceRecord::getTarget));
+                    .collect(Collectors.groupingBy(g -> g.getData().getTarget()));
             for (Map.Entry<String, List<OperationDataTraceRecord>> entry : grouping.entrySet()) {
-                operationDataTraceResolver.getOperationDataTraceRecordHooks()
+                operationDataTraceRepository.getOperationDataTraceRecordHooks()
                         .stream()
                         .filter(s -> s.isSupport(entry.getKey()))
                         .forEach(s -> entry.getValue().forEach(s::preSaveOperationDataTraceRecord));
             }
-            operationDataTraceResolver.saveOperationDataTraceRecord(records);
+            operationDataTraceRepository.saveOperationDataTraceRecord(records);
         }
 
         return result;

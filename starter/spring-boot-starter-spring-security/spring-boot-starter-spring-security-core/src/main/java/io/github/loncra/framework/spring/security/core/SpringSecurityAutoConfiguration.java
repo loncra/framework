@@ -3,6 +3,7 @@ package io.github.loncra.framework.spring.security.core;
 import io.github.loncra.framework.security.entity.RoleAuthority;
 import io.github.loncra.framework.spring.security.core.audit.*;
 import io.github.loncra.framework.spring.security.core.audit.config.ControllerAuditProperties;
+import io.github.loncra.framework.spring.security.core.audit.creator.AuditableInterceptor;
 import io.github.loncra.framework.spring.security.core.authentication.TypeSecurityPrincipalService;
 import io.github.loncra.framework.spring.security.core.authentication.cache.CacheManager;
 import io.github.loncra.framework.spring.security.core.authentication.cache.support.InMemoryCacheManager;
@@ -78,14 +79,25 @@ public class SpringSecurityAutoConfiguration {
     /**
      * 创建控制器审计处理器拦截器 Bean
      *
-     * @param controllerAuditProperties 控制器审计配置属性
+     * @param auditEventInterceptors 审计事件拦截器
      *
      * @return 控制器审计处理器拦截器实例
      */
     @Bean
     @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", matchIfMissing = true, havingValue = "true")
-    public ControllerAuditHandlerInterceptor controllerAuditHandlerInterceptor(ControllerAuditProperties controllerAuditProperties) {
-        return new ControllerAuditHandlerInterceptor(controllerAuditProperties);
+    public ControllerAuditHandlerInterceptor controllerAuditHandlerInterceptor(
+            ObjectProvider<AuditEventInterceptor> auditEventInterceptors
+    ) {
+        return new ControllerAuditHandlerInterceptor(
+                auditEventInterceptors.stream().collect(Collectors.toList())
+        );
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AuditableInterceptor.class)
+    @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", matchIfMissing = true, havingValue = "true")
+    public AuditableInterceptor auditableInterceptor(ControllerAuditProperties auditProperties) {
+        return new AuditableInterceptor(auditProperties);
     }
 
     /**

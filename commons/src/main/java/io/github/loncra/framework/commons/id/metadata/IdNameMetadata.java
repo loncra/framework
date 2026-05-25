@@ -12,6 +12,8 @@ import java.beans.PropertyDescriptor;
 import java.io.Serial;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -33,6 +35,11 @@ public class IdNameMetadata extends IdEntity<String> {
      * 名称
      */
     private String name;
+
+    /**
+     * 元数据信息
+     */
+    private Map<String, Object> metadata = new LinkedHashMap<>();
 
     /**
      * 创建带名称的 id 元数据
@@ -164,5 +171,13 @@ public class IdNameMetadata extends IdEntity<String> {
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
     }
 }

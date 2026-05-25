@@ -1,5 +1,7 @@
 package io.github.loncra.framework.security.audit;
 
+import io.github.loncra.framework.commons.annotation.Metadata;
+
 import java.lang.annotation.*;
 
 /**
@@ -13,29 +15,30 @@ import java.lang.annotation.*;
 public @interface Auditable {
 
     /**
-     * 获取当事人值的属性名称
+     * 审计名称
      *
-     * <p>
-     * 如：
-     * request 提交的参数或头信息存在 token=test，要获取 token 做 principal 的话，principal 就等于 token
-     * </p>
-     *
-     * @return 当事人值的属性名称
+     * @return 名称
      */
-    String principal() default "";
+    String name() default "";
 
     /**
-     * 审计类型
+     * 备注
      *
-     * @return 类型
+     * @return 备注信息
      */
-    String type();
+    String remark() default "";
 
     /**
-     * 是否操作数据留痕
+     * 元数据信息，扩展内容使用
      *
-     * @return true 是，否则 false
+     * @return 元数据信息集合
      */
-    boolean operationDataTrace() default false;
+    Metadata[] metadata() default {};
 
+    /**
+     * 审计忽略
+     *
+     * @return 忽略配置
+     */
+    AuditProperties ignoreProperties() default @AuditProperties;
 }
