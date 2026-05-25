@@ -26,6 +26,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
@@ -204,14 +205,31 @@ public class SpringSecurityAutoConfiguration {
     }
 
     /**
-     * 创建请求体属性增强适配器 Bean
+     * 注册请求体缓存 Filter，在 {@link ControllerAuditHandlerInterceptor#preHandle} 之前写入 body attribute。
      *
-     * @return 请求体属性增强适配器实例
+     * @param auditProperties 控制器审计配置
+     *
+     * @return FilterRegistrationBean 实例
      */
     @Bean
-    @ConditionalOnMissingBean(RequestBodyAttributeAdviceAdapter.class)
-    public RequestBodyAttributeAdviceAdapter requestBodyAttributeAdviceAdapter() {
-        return new RequestBodyAttributeAdviceAdapter();
+    @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            prefix = "loncra.framework.authentication.controller.audit",
+            name = "enabled-cached-body-filter",
+            havingValue = "true",
+            matchIfMissing = true
+    )
+    @ConditionalOnMissingBean(name = "cachedBodyFilterRegistration")
+    public FilterRegistrationBean<CachedBodyFilter> cachedBodyFilterRegistration(
+            ControllerAuditProperties auditProperties
+    ) {
+        FilterRegistrationBean<CachedBodyFilter> registration = new FilterRegistrationBean<>(
+                new CachedBodyFilter(auditProperties.getCachedBodyMaxBytes())
+        );
+        registration.addUrlPatterns("/*");
+        registration.setOrder(auditProperties.getCachedBodyFilterOrder());
+        registration.setName(CachedBodyFilter.class.getName());
+        return registration;
     }
 
     /**

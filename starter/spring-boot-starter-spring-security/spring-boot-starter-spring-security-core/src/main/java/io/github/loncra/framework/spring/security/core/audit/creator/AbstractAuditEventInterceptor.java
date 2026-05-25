@@ -11,12 +11,11 @@ import io.github.loncra.framework.security.audit.IdAuditEvent;
 import io.github.loncra.framework.security.plugin.Plugin;
 import io.github.loncra.framework.security.plugin.PluginInfo;
 import io.github.loncra.framework.spring.security.core.audit.AuditEventInterceptor;
-import io.github.loncra.framework.spring.security.core.audit.RequestBodyAttributeAdviceAdapter;
+import io.github.loncra.framework.spring.security.core.audit.CachedBodyFilter;
 import io.github.loncra.framework.spring.security.core.audit.config.ControllerAuditProperties;
 import io.github.loncra.framework.spring.security.core.authentication.token.AuditAuthenticationToken;
 import io.github.loncra.framework.spring.security.core.entity.AuditAuthenticationSuccessDetails;
 import io.github.loncra.framework.spring.security.core.entity.ControllerAuditEventMetadata;
-import io.github.loncra.framework.spring.web.mvc.SpringMvcUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MapUtils;
@@ -42,8 +41,10 @@ import java.util.Objects;
 /**
  * {@link AuditEventInterceptor} 模板实现：从 {@link AuditProperties} 采集请求快照、解析 principal、
  * 构建 {@link ControllerAuditEventMetadata}，并通过 {@link SpringExpressionMetadataGenerator} 解析 {@link Metadata} SpEL。
- * <p>{@link #afterCompletion}：{@code ex == null} 且 HTTP 200 时标记 {@link ExecuteStatus#Success}；
- * 仅当 {@code ex != null} 时标记 {@link ExecuteStatus#Failure} 并记录异常信息（避免对 null 调用 {@code getMessage()}）。</p>
+ * <p>请求体来自 {@link CachedBodyFilter} 在 Filter 层写入的 {@link CachedBodyFilter#REQUEST_BODY_ATTRIBUTE_NAME}（须在
+ * {@link io.github.loncra.framework.spring.security.core.audit.ControllerAuditHandlerInterceptor} 之前执行），见 {@link #createControllerMetadata}。</p>
+ * <p>{@link #afterCompletion}：HTTP 200 时 {@link ExecuteStatus#Success}；非 200 时 {@link ExecuteStatus#Failure}，
+ * 有 {@code ex} 记录 {@code ex.getMessage()}，无 {@code ex} 记录 {@link HttpStatus} reason phrase。</p>
  *
  * @author maurice.chen
  */
@@ -207,6 +208,14 @@ public abstract class AbstractAuditEventInterceptor implements AuditEventInterce
         }
     }
 
+    /**
+     * 构建控制器审计元数据（URL、方法、头、参数、body）。
+     * <p>body 从 {@link CachedBodyFilter#REQUEST_BODY_ATTRIBUTE_NAME} 读取；若 Filter 未缓存（multipart、超限等）则为空。</p>
+     *
+     * @param auditProperties 忽略项与 principal 配置
+     * @param request         当前请求（通常为 {@link CachedBodyHttpServletRequestWrapper}）
+     * @return 控制器审计元数据
+     */
     public ControllerAuditEventMetadata createControllerMetadata(
             AuditProperties auditProperties,
             HttpServletRequest request
@@ -224,9 +233,11 @@ public abstract class AbstractAuditEventInterceptor implements AuditEventInterce
             controllerAuditEventMetadata.setParameters(request.getParameterMap());
         }
 
-        Object body = SpringMvcUtils.getRequestAttribute(RequestBodyAttributeAdviceAdapter.REQUEST_BODY_ATTRIBUTE_NAME);
+        Object body = request.getAttribute(CachedBodyFilter.REQUEST_BODY_ATTRIBUTE_NAME);
         if (Objects.nonNull(body) && !auditProperties.ignoreRequestBody()) {
-            Map<String, Object> bodyMap = CastUtils.convertValue(body, CastUtils.MAP_TYPE_REFERENCE);
+            Map<String, Object> bodyMap = body instanceof Map<?, ?> map
+                    ? CastUtils.cast(map)
+                    : CastUtils.convertValue(body, CastUtils.MAP_TYPE_REFERENCE);
             bodyMap.put(BeanDefinitionParserDelegate.CLASS_ATTRIBUTE, body.getClass());
             controllerAuditEventMetadata.setBody(bodyMap);
         }
