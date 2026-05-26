@@ -313,6 +313,10 @@ public class PluginEndpoint {
                 target.setSources(parent.getSources());
             }
 
+            if (CollectionUtils.isEmpty(target.getSources())) {
+                target.setSources(properties.getGenerateSources());
+            }
+
             List<String> authorize = getSecurityAuthorize(method);
 
             if (!authorize.isEmpty()) {
