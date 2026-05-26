@@ -20,11 +20,11 @@ import java.lang.annotation.*;
 public @interface OperationDataTrace {
 
     /**
-     * 目标名称
+     * 审计名称
      *
-     * @return 目标名称
+     * @return 审计名称
      */
-    String name() default "";
+    String value() default "";
 
     /**
      * 获取当事人值的属性名称

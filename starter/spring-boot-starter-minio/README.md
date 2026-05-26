@@ -48,7 +48,7 @@
 | `**MinioAsyncTemplate**` | 异步 S3/JSON 等封装 |
 | `**ConsoleApiMinioAsyncClient**` | Console 登录、Cookie 刷新、REST 封装；继承自 `**MinioAsyncClient**` |
 | `**UserMetadataFileObject**` | 继承 `**FileObject**`，`putObject` 时带 `**userMetadata**`；**分片**路径下若元数据在 `**extraHeaders**` 中会被合并到 header 参与上传 |
-| `**ObjectItem**` | 把 `**Item**` 暴露为便于 JSON 的**包装**类 |
+| `**ObjectItem**` | 把 `**Item**` 暴露为便于 JSON 的**包装**类；实现 `**BasicIdentification<String>**`，`**getId()**` 为 `objectName + etag` 的 MD5（**不可** `setId`） |
 
 ## 配置项
 

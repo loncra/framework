@@ -19,7 +19,7 @@ public @interface Auditable {
      *
      * @return 名称
      */
-    String name() default "";
+    String value() default "";
 
     /**
      * 备注

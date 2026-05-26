@@ -1,12 +1,15 @@
 package io.github.loncra.framework.minio;
 
+import io.github.loncra.framework.commons.id.BasicIdentification;
 import io.github.loncra.framework.commons.minio.ObjectWriteResult;
 import io.minio.messages.Item;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.springframework.util.DigestUtils;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -17,7 +20,7 @@ import java.util.Objects;
  *
  * @author maurice.chen
  */
-public class ObjectItem implements Serializable {
+public class ObjectItem implements BasicIdentification<String> {
 
     @Serial
     private static final long serialVersionUID = 5808561181950704489L;
@@ -157,5 +160,15 @@ public class ObjectItem implements Serializable {
      */
     public boolean isDir() {
         return item.isDir();
+    }
+
+    @Override
+    public String getId() {
+        return DigestUtils.md5DigestAsHex((getObjectName() + getEtag()).getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public void setId(String id) {
+        throw new UnsupportedOperationException("ObjectItem 不支持修改 id 设置");
     }
 }

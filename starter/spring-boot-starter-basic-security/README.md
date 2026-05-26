@@ -566,4 +566,5 @@ loncra:
 - `IgnoreOrDesensitizeResultFilter` 的顺序为 `Ordered.HIGHEST_PRECEDENCE`，请求结束时会自动清理 ThreadLocal 上下文。
 - `IgnoreOrDesensitizeResultHolder.convert(...)` 依赖 `commons` 中的 JsonPath 对象处理能力，配置表达式应与实际响应结构保持一致。
 - `@Auditable` 在本模块仅声明元数据；**控制器审计**由 `spring-boot-starter-spring-security-core` 的 **`AuditableInterceptor`** 消费（见该模块 README）。`@Plugin` 仍由上层做资源/权限扫描。
-- `@AuditProperties` 通过 **`@Auditable#ignoreProperties()`**（本模块）或 **`@OperationDataTrace#ignoreProperties()`**（注解在 **`spring-boot-starter-spring-security-core`**）嵌套使用，配置是否忽略请求头/参数/体及 principal 解析键；**不再**在 `@Auditable` 顶层直接写 `principal` / `ignoreRequest*`。
+- `@Auditable#value()` 为审计名称；`@OperationDataTrace#value()` 同理（注解定义在 **`spring-boot-starter-spring-security-core`**）。
+- `@AuditProperties` 通过 **`@Auditable#ignoreProperties()`**（本模块）或 **`@OperationDataTrace#ignoreProperties()`**（注解在 **`spring-boot-starter-spring-security-core`**）嵌套使用，配置是否忽略请求头/参数/体及 principal 解析键。

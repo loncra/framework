@@ -40,7 +40,7 @@ public class OperationDataTraceAuditEventInterceptor extends AbstractAuditEventI
 
         OperationDataTrace dataTrace = AnnotationUtils.findAnnotation(handlerMethod.getMethod(), OperationDataTrace.class);
 
-        controllerAuditEventMetadata.setName(dataTrace.name());
+        controllerAuditEventMetadata.setName(dataTrace.value());
         controllerAuditEventMetadata.setRemark(dataTrace.remark());
 
         request.setAttribute(IGNORE_REQUEST_BODY_ATTR_NAME, dataTrace.ignoreProperties().ignoreRequestBody());

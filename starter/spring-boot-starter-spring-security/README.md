@@ -36,9 +36,12 @@
 
 配置前缀 **`loncra.framework.authentication.controller.audit`**（`ControllerAuditProperties`）：可改 `controller-audit-name`、`operation-data-trace-audit-name`。
 
-**`@Auditable` 与 `@OperationDataTrace` 可并存**：各自独立 attribute 与发布路径；写库留痕仅走 `@OperationDataTrace` 链路。请求头/体/参数忽略项见嵌套 **`@AuditProperties`**（`ignoreProperties()`）。
+**`@Auditable` 与 `@OperationDataTrace` 可并存**：各自独立 attribute 与发布路径；写库留痕仅走 `@OperationDataTrace` 链路。
 
-**Breaking**：旧版 `@Auditable` 顶层 `principal` / `ignoreRequest*` 已移至 **`@AuditProperties`**；开启 DB 留痕需在方法上显式加 **`@OperationDataTrace`**，不再依赖 request 上的 `operationDataTrace=true` 等 flag。
+- **`value()`**：审计名称，可简写 `@Auditable("登录")`、`@OperationDataTrace("保存用户")`。
+- **`remark()`**：备注。
+- **`ignoreProperties()`**：嵌套 **`@AuditProperties`**，配置是否忽略请求头/参数/体及 principal 解析键。
+- 写库留痕须在 Controller 方法上标注 **`@OperationDataTrace`**，才会触发 MyBatis 留痕链路。
 
 #### 请求体快照：`RequestBodyAttributeAdviceAdapter`
 

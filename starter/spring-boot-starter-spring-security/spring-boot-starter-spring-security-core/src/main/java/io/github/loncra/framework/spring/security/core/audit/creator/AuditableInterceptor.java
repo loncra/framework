@@ -46,7 +46,7 @@ public class AuditableInterceptor extends AbstractAuditEventInterceptor {
 
         Auditable auditable = AnnotationUtils.findAnnotation(handlerMethod.getMethod(), Auditable.class);
 
-        controllerAuditEventMetadata.setName(auditable.name());
+        controllerAuditEventMetadata.setName(auditable.value());
         controllerAuditEventMetadata.setRemark(auditable.remark());
 
         return auditable.metadata();
