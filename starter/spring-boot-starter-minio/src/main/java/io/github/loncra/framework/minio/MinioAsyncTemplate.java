@@ -23,6 +23,8 @@ import org.springframework.util.AntPathMatcher;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -608,6 +610,7 @@ public class MinioAsyncTemplate extends ConsoleApiMinioAsyncClient {
             objectWriteResult.setEtag(item.getEtag());
             objectWriteResult.setSize(item.getSize());
             objectWriteResult.setExtraHeaders(item.getUserMetadata());
+            objectWriteResult.setLastModified(item.getLastModified());
             list.add(objectWriteResult);
         }
         return list;

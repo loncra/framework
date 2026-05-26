@@ -3,6 +3,7 @@ package io.github.loncra.framework.commons.minio;
 import org.springframework.util.DigestUtils;
 
 import java.io.Serial;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,6 +37,11 @@ public class ObjectWriteResult extends FileObject {
      * 文件大小
      */
     private long size;
+
+    /**
+     * 最后修改时间
+     */
+    private Instant lastModified;
 
     /**
      * 设置信息
@@ -177,5 +183,13 @@ public class ObjectWriteResult extends FileObject {
 
     public void setSetting(Map<String, Object> setting) {
         this.setting = setting;
+    }
+
+    public Instant getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(Instant lastModified) {
+        this.lastModified = lastModified;
     }
 }

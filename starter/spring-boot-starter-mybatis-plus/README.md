@@ -101,7 +101,7 @@ loncra:
     security:
       audit:
         enabled: true
-        type: memory
+        type: Memory
 ```
 
 这样就能跑通：
@@ -313,7 +313,6 @@ loncra:
       operation-data-trace:
         enabled: true
         audit-prefix-name: OPERATION_DATA_AUDIT
-        date-format: yyyy-MM-dd HH:mm:ss
         storage-position:
           prefix: operation_audit
           separator: _
@@ -348,4 +347,5 @@ loncra:
 - 自动装配入口：`META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` 注册 `io.github.loncra.framework.mybatis.plus.MybatisPlusAutoConfiguration`（**在** `MybatisAutoConfiguration` **之前**装配，由 `@AutoConfigureBefore` 指定）。
 - **YAML 键** `loncra.framework.mybatis.plus.crypto.*` 与 `CryptoProperties` 字段**对应**；`data-ras-crypto-*` 的命名在源码中写作 **Ras**（非 Rsa），**绑定时**以 `CryptoProperties` **setter 为准**。
 - `CryptoProperties` **类**内**未**声明 `enabled` 字段；`crypto.enabled` 仅**用于** `@ConditionalOnProperty` 控制是否创建**默认** AES/RSA 服务 Bean。
+- `OperationDataTraceProperties#dateFormat`（YAML：`operation-data-trace.date-format`）在属性类中存在，**当前留痕实现未消费**；请勿在文档示例中配置该项。
 

@@ -7,6 +7,7 @@ import org.apache.commons.lang3.Strings;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
@@ -62,9 +63,9 @@ public class ObjectItem implements Serializable {
      *
      * @return 最后修改时间，转换失败时返回 null
      */
-    public LocalDateTime getLastModified() {
+    public Instant getLastModified() {
         try {
-            return item.lastModified().toLocalDateTime();
+            return item.lastModified().toInstant();
         }
         catch (Exception e) {
             return null;

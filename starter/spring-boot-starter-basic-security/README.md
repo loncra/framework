@@ -71,7 +71,7 @@ io.github.loncra.framework.security
 │   ├── SpringElStoragePositioningGenerator    # SpEL 存储位置生成器
 │   ├── AuditPrincipal / SimpleAuditPrincipal  # 审计当事人模型
 │   ├── Auditable                              # 控制器审计标记（由 spring-security-core AuditableInterceptor 消费）
-│   ├── AuditProperties                        # 嵌套于 @Auditable / @OperationDataTrace 的忽略项与 principal 配置
+│   ├── AuditProperties                        # 嵌套于 @Auditable（本模块）及 @OperationDataTrace（spring-security-core）的忽略项与 principal 配置
 ├── audit.memory
 │   ├── CustomInMemoryAuditConfiguration       # 内存审计自动配置
 │   └── CustomInMemoryAuditEventRepository     # 带写入拦截的内存审计仓库
@@ -426,7 +426,7 @@ public class DemoMongoAuditQueryInterceptor
 
 ### 3. 使用 `@Plugin` 描述资源元信息
 
-`@Plugin` 可以标记在类或方法上，用于给上层资源扫描、权限菜单、审计配置等功能提供元数据。本模块只提供注解和 `PluginInfo` 模型，不包含自动扫描器。
+`@Plugin` 可以标记在类或方法上，用于给上层资源扫描、权限菜单等功能提供元数据。本模块只提供注解和 `PluginInfo` 模型，不包含自动扫描器。**控制器审计**与**写库留痕**请在方法上使用 `@Auditable` / `@OperationDataTrace`（见 [`spring-boot-starter-spring-security`](../spring-boot-starter-spring-security/README.md)），**不要**在 `@Plugin` 上配置（该注解无 `audit` / `operationDataTrace` 等字段）。
 
 ```java
 import io.github.loncra.framework.commons.annotation.Metadata;
@@ -437,8 +437,6 @@ import io.github.loncra.framework.security.plugin.Plugin;
         parent = "user:root",
         name = "用户列表",
         authority = {"sys:user:list"},
-        audit = true,
-        operationDataTrace = true,
         sources = {"admin"},
         sort = 10,
         remark = "用户模块查询入口",
@@ -568,4 +566,4 @@ loncra:
 - `IgnoreOrDesensitizeResultFilter` 的顺序为 `Ordered.HIGHEST_PRECEDENCE`，请求结束时会自动清理 ThreadLocal 上下文。
 - `IgnoreOrDesensitizeResultHolder.convert(...)` 依赖 `commons` 中的 JsonPath 对象处理能力，配置表达式应与实际响应结构保持一致。
 - `@Auditable` 在本模块仅声明元数据；**控制器审计**由 `spring-boot-starter-spring-security-core` 的 **`AuditableInterceptor`** 消费（见该模块 README）。`@Plugin` 仍由上层做资源/权限扫描。
-- `@AuditProperties` 通过 **`@Auditable#ignoreProperties()`** 或 **`@OperationDataTrace#ignoreProperties()`** 嵌套使用，配置是否忽略请求头/参数/体及 principal 解析键；**不再**在 `@Auditable` 顶层直接写 `principal` / `ignoreRequest*`。
+- `@AuditProperties` 通过 **`@Auditable#ignoreProperties()`**（本模块）或 **`@OperationDataTrace#ignoreProperties()`**（注解在 **`spring-boot-starter-spring-security-core`**）嵌套使用，配置是否忽略请求头/参数/体及 principal 解析键；**不再**在 `@Auditable` 顶层直接写 `principal` / `ignoreRequest*`。

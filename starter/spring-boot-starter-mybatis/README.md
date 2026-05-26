@@ -127,6 +127,7 @@
 | `enabled` | 是否注册 `OperationDataTraceInterceptor`（仍要求容器内已存在 `OperationDataTraceRepository`） | `true` |
 | `audit-prefix-name` | 与审计事件 type 拼接的业务前缀（MP 实现中常用） | `OPERATION_DATA_AUDIT` |
 | `storage-position` | 非空时对每条基础 record SpEL 生成 `storagePositioning` **复制行** | 可选 |
+| `date-format` | `OperationDataTraceProperties` 上存在该字段，**当前留痕链路未读取**；配置无效，请勿依赖 | 默认 `yyyy-MM-dd HH:mm:ss` |
 
 ## `@JsonCollectionGenericType`：要解决什么问题
 

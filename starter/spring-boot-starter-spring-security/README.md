@@ -57,7 +57,10 @@
 
 #### `afterCompletion` 执行状态
 
-[`AbstractAuditEventInterceptor#afterCompletion`](spring-boot-starter-spring-security-core/src/main/java/io/github/loncra/framework/spring/security/core/audit/creator/AbstractAuditEventInterceptor.java)：HTTP **200** → `ExecuteStatus.Success`；**非 200** → `Failure`，有异常写 `ex.getMessage()`，否则写对应 `HttpStatus` reason phrase。
+| 路径 | 行为 |
+|------|------|
+| **`@Auditable`** | [`AbstractAuditEventInterceptor#afterCompletion`](spring-boot-starter-spring-security-core/src/main/java/io/github/loncra/framework/spring/security/core/audit/creator/AbstractAuditEventInterceptor.java) 在 `ControllerAuditHandlerInterceptor` **publish 之前**执行：HTTP **200** → `ExecuteStatus.Success`；**非 200** → `Failure`，有异常写 `ex.getMessage()`，否则写对应 `HttpStatus` reason phrase。 |
+| **`@OperationDataTrace` + MyBatis 留痕** | 合并发布在 [`SecurityPrincipalOperationDataTraceRepository#createAuditEvent`](spring-boot-starter-spring-security-core/src/main/java/io/github/loncra/framework/spring/security/core/audit/SecurityPrincipalOperationDataTraceRepository.java) 中完成；当前实现将控制器 metadata 的 **`ExecuteStatus` 固定为 `Success`**（不随 HTTP 状态码变化）。若仅标注 `@OperationDataTrace` 且**未**触发写库，仍会走上一行的 `afterCompletion` 规则并由 `ControllerAuditHandlerInterceptor` 发布。 |
 
 ## 3. 主开关与相关条件
 
