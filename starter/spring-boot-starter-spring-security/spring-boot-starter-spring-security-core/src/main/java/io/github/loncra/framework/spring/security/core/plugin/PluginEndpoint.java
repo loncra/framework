@@ -59,8 +59,6 @@ public class PluginEndpoint {
 
     public static final String DEFAULT_IS_AUTHENTICATED_METHOD_NAME = "isAuthenticated";
 
-    public static final String PATH_VARIABLE_FILTER = "\\{.*\\}";
-
     public static final String DEFAULT_HAS_ANY_ROLE_METHOD_NAME = "hasAnyRole";
 
     public static final String DEFAULT_HAS_ROLE_METHOD_NAME = "hasRole";
