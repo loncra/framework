@@ -325,7 +325,9 @@ public class PluginEndpoint {
 
         }
 
-        findMissingParentThenBuildPluginInfo(targetObject, parent, result);
+        if (Objects.nonNull(parent)) {
+            findMissingParentThenBuildPluginInfo(targetObject, parent, result);
+        }
 
         return result;
     }
@@ -335,6 +337,7 @@ public class PluginEndpoint {
             PluginInfo parent,
             List<PluginInfo> result
     ) {
+
         if (!missingParentMap.containsKey(parent.getId())) {
             return;
         }
