@@ -1,5 +1,6 @@
 package io.github.loncra.framework.spring.security.core.audit;
 
+import io.github.loncra.framework.spring.security.core.entity.ControllerAuditEventMetadata;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.actuate.audit.AuditEvent;
@@ -39,8 +40,10 @@ public interface AuditEventInterceptor {
      * @param handler    控制器方法句柄
      * @param ex         处理过程中抛出的异常；无异常时为 {@code null}
      * @param auditEvent {@code preHandle} 阶段写入 request 的同一事件实例
+     *
+     * @return 最新需要保存的审计事件内容
      */
-    void afterCompletion(
+    AuditEvent afterCompletion(
             HttpServletRequest request,
             HttpServletResponse response,
             HandlerMethod handler,

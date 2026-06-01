@@ -80,9 +80,9 @@ public class ControllerAuditHandlerInterceptor implements ApplicationEventPublis
                 continue;
             }
             AuditEvent auditEvent = CastUtils.cast(event);
-            interceptor.afterCompletion(request, response, handlerMethod, ex, auditEvent);
+            AuditEvent saveEvent = interceptor.afterCompletion(request, response, handlerMethod, ex, auditEvent);
             // 推送审计事件
-            applicationEventPublisher.publishEvent(new AuditApplicationEvent(auditEvent));
+            applicationEventPublisher.publishEvent(new AuditApplicationEvent(saveEvent));
         }
 
     }

@@ -2,14 +2,9 @@ package io.github.loncra.framework.spring.security.core.authentication.token;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.github.loncra.framework.commons.CacheProperties;
-import io.github.loncra.framework.commons.enumerate.security.UserStatus;
 import io.github.loncra.framework.security.entity.SecurityPrincipal;
-import io.github.loncra.framework.security.entity.support.SimpleSecurityPrincipal;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.SpringSecurityMessageSource;
 
 import java.io.Serial;
 import java.time.Instant;
@@ -178,30 +173,4 @@ public class AuditAuthenticationToken extends AbstractAuthenticationToken {
         return getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
     }
 
-    /**
-     * 从字符串创建审计认证令牌
-     *
-     * @param splitString        分割字符串（格式：用户类型:用户ID:用户名）
-     * @param grantedAuthorities 授予的权限集合
-     *
-     * @return 审计认证令牌
-     */
-    public static AuditAuthenticationToken ofString(
-            String splitString,
-            Collection<? extends GrantedAuthority> grantedAuthorities
-    ) {
-        String type = StringUtils.substringBefore(splitString, CacheProperties.DEFAULT_SEPARATOR);
-        if (StringUtils.isEmpty(type)) {
-            String message = SpringSecurityMessageSource.getAccessor().getMessage(
-                    "AuditAuthenticationToken.formatError",
-                    "登录数据出错，格式应该为:<用户类型>:<用户ID>:<用户登录信息>， 当前格式为:" + splitString
-            );
-            throw new InternalAuthenticationServiceException(message);
-        }
-
-        String principalString = StringUtils.substringAfter(splitString, CacheProperties.DEFAULT_SEPARATOR);
-        SimpleSecurityPrincipal principal = new SimpleSecurityPrincipal(principalString, null, UserStatus.Disabled);
-
-        return new AuditAuthenticationToken(principal, type, grantedAuthorities, Instant.now());
-    }
 }

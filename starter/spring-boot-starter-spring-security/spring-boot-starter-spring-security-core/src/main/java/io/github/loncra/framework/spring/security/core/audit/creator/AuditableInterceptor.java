@@ -53,24 +53,29 @@ public class AuditableInterceptor extends AbstractAuditEventInterceptor {
     }
 
     @Override
-    public void afterCompletion(
+    public AuditEvent afterCompletion(
             HttpServletRequest request,
             HttpServletResponse response,
             HandlerMethod handler,
             Exception ex,
             AuditEvent auditEvent
     ) {
-        super.afterCompletion(request, response, handler, ex, auditEvent);
+        AuditEvent superEvent = super.afterCompletion(request, response, handler, ex, auditEvent);
 
         Auditable auditable = AnnotationUtils.findAnnotation(handler.getMethod(), Auditable.class);
 
         Object body = SpringMvcUtils.getRequestAttribute(RequestBodyAttributeAdviceAdapter.REQUEST_BODY_ATTRIBUTE_NAME);
         if (Objects.nonNull(body) && !auditable.ignoreProperties().ignoreRequestBody()) {
-            ControllerAuditEventMetadata metadata = CastUtils.cast(auditEvent.getData().get(RestResult.DEFAULT_METADATA_NAME));
+            ControllerAuditEventMetadata metadata = CastUtils.convertValue(
+                    superEvent.getData().get(RestResult.DEFAULT_METADATA_NAME),
+                    ControllerAuditEventMetadata.class
+            );
             Map<String, Object> bodyMap = CastUtils.convertValue(body, CastUtils.MAP_TYPE_REFERENCE);
             bodyMap.put(BeanDefinitionParserDelegate.CLASS_ATTRIBUTE, body.getClass());
             metadata.setBody(bodyMap);
         }
+
+        return superEvent;
     }
 
     @Override

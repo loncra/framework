@@ -33,6 +33,7 @@ import org.springframework.web.method.HandlerMethod;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -141,16 +142,22 @@ public abstract class AbstractAuditEventInterceptor implements AuditEventInterce
     );
 
     @Override
-    public void afterCompletion(
+    public AuditEvent afterCompletion(
             HttpServletRequest request,
             HttpServletResponse response,
             HandlerMethod handler,
             Exception ex,
             AuditEvent auditEvent
     ) {
+        Object metadata = auditEvent.getData().get(RestResult.DEFAULT_METADATA_NAME);
+        if (Objects.isNull(metadata)) {
+            return auditEvent;
+        }
         try {
-
-            ControllerAuditEventMetadata controllerAuditEventMetadata = CastUtils.cast(auditEvent.getData().get(RestResult.DEFAULT_METADATA_NAME));
+            ControllerAuditEventMetadata controllerAuditEventMetadata = CastUtils.convertValue(
+                    metadata,
+                    ControllerAuditEventMetadata.class
+            );
             controllerAuditEventMetadata.setEndTime(Instant.now());
 
             if (HttpStatus.OK.value() == response.getStatus()) {
@@ -164,8 +171,12 @@ public abstract class AbstractAuditEventInterceptor implements AuditEventInterce
                     controllerAuditEventMetadata.setException(HttpStatus.valueOf(response.getStatus()).getReasonPhrase());
                 }
             }
+            Map<String, Object> data = new LinkedHashMap<>(auditEvent.getData());
+            data.put(RestResult.DEFAULT_METADATA_NAME, controllerAuditEventMetadata);
+            return new AuditEvent(auditEvent.getPrincipal(), auditEvent.getType(), data);
         } catch (Exception e) {
             LOGGER.warn("执行 AbstractAuditEventInterceptor.afterCompletion 内容时出现异常", e);
+            return auditEvent;
         }
 
     }
