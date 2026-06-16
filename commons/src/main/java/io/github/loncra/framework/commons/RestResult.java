@@ -76,13 +76,13 @@ public class RestResult<T> implements Serializable {
     private Map<String, Object> metadata = new LinkedHashMap<>();
 
     /**
-     * 创建一个抽象的 rest 结果集实体类
+     * 创建一个 rest 结果集实体类
      */
     public RestResult() {
     }
 
     /**
-     * 创建一个抽象的 rest 结果集实体类
+     * 创建一个 rest 结果集实体类
      *
      * @param message 响应信息
      *
@@ -93,7 +93,7 @@ public class RestResult<T> implements Serializable {
     }
 
     /**
-     * 创建一个抽象的 rest 结果集实体类
+     * 创建一个 rest 结果集实体类
      *
      * @param message 响应信息
      * @param status  执行状态
@@ -108,7 +108,7 @@ public class RestResult<T> implements Serializable {
     }
 
     /**
-     * 创建一个抽象的 rest 结果集实体类
+     * 创建一个 rest 结果集实体类
      *
      * @param message     响应信息
      * @param status      执行状态
@@ -125,7 +125,7 @@ public class RestResult<T> implements Serializable {
     }
 
     /**
-     * 创建一个抽象的 rest 结果集实体类
+     * 创建一个 rest 结果集实体类
      *
      * @param message     响应信息
      * @param status      执行状态
@@ -272,7 +272,7 @@ public class RestResult<T> implements Serializable {
     }
 
     /**
-     * 抽象的 rest 结果集实体类
+     *  rest 结果集实体类
      *
      * @param message     响应信息
      * @param status      执行状态

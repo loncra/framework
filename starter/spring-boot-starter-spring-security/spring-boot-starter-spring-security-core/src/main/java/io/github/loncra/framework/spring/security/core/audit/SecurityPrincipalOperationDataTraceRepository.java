@@ -97,9 +97,7 @@ public class SecurityPrincipalOperationDataTraceRepository extends MybatisPlusOp
             Object body = SpringMvcUtils.getRequestAttribute(RequestBodyAttributeAdviceAdapter.REQUEST_BODY_ATTRIBUTE_NAME);
             Boolean ignore = SpringMvcUtils.getRequestAttribute(OperationDataTraceAuditEventInterceptor.IGNORE_REQUEST_BODY_ATTR_NAME);
             if (Objects.nonNull(body) && !ignore) {
-                Map<String, Object> bodyMap = CastUtils.convertValue(body, CastUtils.MAP_TYPE_REFERENCE);
-                bodyMap.put(BeanDefinitionParserDelegate.CLASS_ATTRIBUTE, body.getClass());
-                controller.setBody(bodyMap);
+                controller.setBody(body);
             }
         }
 

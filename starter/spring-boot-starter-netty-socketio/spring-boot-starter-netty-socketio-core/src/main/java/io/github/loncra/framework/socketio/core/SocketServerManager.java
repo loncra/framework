@@ -189,8 +189,11 @@ public class SocketServerManager implements AuthorizationListener, ConnectListen
             Set<String> clientIds = CastUtils.cast(clientSetObject);
             return clientIds.stream()
                     .map(this::getSocketAuditAuthenticationToken)
+                    .filter(Objects::nonNull)
                     .map(AuditAuthenticationToken::getPrincipal)
+                    .filter(Objects::nonNull)
                     .map(s -> CastUtils.cast(s, SocketPrincipal.class))
+                    .filter(Objects::nonNull)
                     .toList();
         }
         return Collections.emptyList();

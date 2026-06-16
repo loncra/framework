@@ -3,6 +3,7 @@ package io.github.loncra.framework.socketio.core.holder;
 import io.github.loncra.framework.socketio.core.holder.annotation.SocketMessage;
 import io.github.loncra.framework.socketio.core.holder.interceptor.SocketMessageInterceptor;
 import org.aopalliance.aop.Advice;
+import org.jspecify.annotations.NonNull;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
@@ -31,8 +32,8 @@ public class SocketMessagePointcutAdvisor extends AbstractPointcutAdvisor {
         return new StaticMethodMatcherPointcut() {
             @Override
             public boolean matches(
-                    Method method,
-                    Class<?> targetClass
+                    @NonNull Method method,
+                    @NonNull Class<?> targetClass
             ) {
                 return method.isAnnotationPresent(SocketMessage.class) || targetClass.isAnnotationPresent(SocketMessage.class);
             }

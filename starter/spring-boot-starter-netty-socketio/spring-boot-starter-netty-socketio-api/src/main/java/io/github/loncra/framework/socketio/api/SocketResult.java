@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Socket 推送结果容器。
@@ -34,18 +33,18 @@ public class SocketResult implements Serializable {
     /**
      * 待发送消息集合。
      */
-    private List<AbstractSocketMessageMetadata<Object>> messages = new LinkedList<>();
+    private List<AbstractSocketMessageMetadata<?>> messages = new LinkedList<>();
 
     public SocketResult() {
     }
 
-    public SocketResult(List<AbstractSocketMessageMetadata<Object>> messages) {
+    public SocketResult(List<AbstractSocketMessageMetadata<?>> messages) {
         this(true, messages);
     }
 
     public SocketResult(
             boolean removeIfExist,
-            List<AbstractSocketMessageMetadata<Object>> messages
+            List<AbstractSocketMessageMetadata<?>> messages
     ) {
         this.removeIfExist = removeIfExist;
         this.messages = messages;
@@ -80,11 +79,11 @@ public class SocketResult implements Serializable {
         messages.addAll(socketResult.getMessages());
     }
 
-    public List<AbstractSocketMessageMetadata<Object>> getMessages() {
+    public List<AbstractSocketMessageMetadata<?>> getMessages() {
         return messages;
     }
 
-    public void setMessages(List<AbstractSocketMessageMetadata<Object>> messages) {
+    public void setMessages(List<AbstractSocketMessageMetadata<?>> messages) {
         this.messages = messages;
     }
 
@@ -95,8 +94,8 @@ public class SocketResult implements Serializable {
      * @param existMessageList 已存在的消息集合
      */
     private void removeIfExist(
-            AbstractSocketMessageMetadata<Object> newMessage,
-            List<AbstractSocketMessageMetadata<Object>> existMessageList
+            AbstractSocketMessageMetadata<?> newMessage,
+            List<AbstractSocketMessageMetadata<?>> existMessageList
     ) {
 
         if (!removeIfExist) {
@@ -106,11 +105,10 @@ public class SocketResult implements Serializable {
         List<AbstractSocketMessageMetadata<?>> exitList = existMessageList
                 .stream()
                 .filter(u -> u.getEvent().equals(newMessage.getEvent()))
-                .collect(Collectors.toList());
+                .toList();
 
         List<AbstractSocketMessageMetadata<?>> result = findSameSocketMessage(newMessage, new LinkedList<>(exitList));
 
-        //noinspection SuspiciousMethodCalls
         existMessageList.removeAll(result);
     }
 
@@ -132,7 +130,7 @@ public class SocketResult implements Serializable {
         List<AbstractSocketMessageMetadata<?>> result = new LinkedList<>();
 
         if (IdEntity.class.isAssignableFrom(newData.getClass())) {
-            IdEntity<Object> newIdEntity = CastUtils.cast(newData);
+            IdEntity<?> newIdEntity = CastUtils.cast(newData);
             for (AbstractSocketMessageMetadata<?> message : existMessageList) {
 
                 Object oldData = message.getMessage().getData();
@@ -141,7 +139,7 @@ public class SocketResult implements Serializable {
                     continue;
                 }
 
-                IdEntity<Object> oldIdEntity = CastUtils.cast(oldData);
+                IdEntity<?> oldIdEntity = CastUtils.cast(oldData);
 
                 if (Objects.equals(oldIdEntity.getId(), newIdEntity.getId())) {
                     result.add(message);

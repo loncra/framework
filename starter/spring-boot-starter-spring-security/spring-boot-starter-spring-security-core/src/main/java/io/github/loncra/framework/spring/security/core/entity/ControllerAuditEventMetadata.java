@@ -39,7 +39,7 @@ public class ControllerAuditEventMetadata extends IdNameMetadata implements Basi
 
     private Map<String, String[]> parameters;
 
-    private Map<String, Object> body;
+    private Object body;
 
     public ControllerAuditEventMetadata() {
     }
@@ -116,11 +116,11 @@ public class ControllerAuditEventMetadata extends IdNameMetadata implements Basi
         this.parameters = parameters;
     }
 
-    public Map<String, Object> getBody() {
+    public Object getBody() {
         return body;
     }
 
-    public void setBody(Map<String, Object> body) {
+    public void setBody(Object body) {
         this.body = body;
     }
 
