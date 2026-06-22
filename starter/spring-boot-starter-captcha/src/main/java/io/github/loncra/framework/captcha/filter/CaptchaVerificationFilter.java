@@ -86,7 +86,7 @@ public class CaptchaVerificationFilter extends OncePerRequestFilter {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("对 {} 请求校验验证码成功，请求参数为:{}", url, request.getParameterMap());
             }
-            request.setAttribute(CaptchaVerificationService.class.getName(), result);
+            request.setAttribute(CaptchaVerificationFilter.class.getName(), result);
             captchaVerificationInterceptors.forEach(a -> a.postVerify(request, response));
             if (getVerifySuccessDelete(request)) {
                 captchaVerificationService.delete(request);
