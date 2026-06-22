@@ -85,7 +85,7 @@ public class DelegateCaptchaService {
      *
      * @return 验证结果集
      */
-    public RestResult<Map<String, Object>> verify(HttpServletRequest request) {
+    public RestResult<Object> verify(HttpServletRequest request) {
 
         CaptchaService captchaService = getCaptchaServiceByRequest(request);
 

@@ -55,7 +55,7 @@ public class DelegateCaptchaInterceptor implements Interceptor {
     }
 
     @Override
-    public RestResult<Map<String, Object>> verifyCaptcha(HttpServletRequest request) {
+    public RestResult<Object> verifyCaptcha(HttpServletRequest request) {
         // 通过本次请求看看是否需要做一次拦截验证
         CaptchaService captchaService = delegateCaptchaService.getCaptchaServiceByRequest(request);
 

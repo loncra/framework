@@ -1,6 +1,7 @@
 package io.github.loncra.framework.captcha.filter;
 
 import io.github.loncra.framework.captcha.CaptchaProperties;
+import io.github.loncra.framework.commons.RestResult;
 import io.github.loncra.framework.commons.exception.SystemException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -81,10 +82,11 @@ public class CaptchaVerificationFilter extends OncePerRequestFilter {
                     .filter(c -> c.getType().contains(type))
                     .findFirst()
                     .orElseThrow(() -> new SystemException("找不到类型为 [" + type + "] 的验证码校验实现"));
-            captchaVerificationService.verify(request);
+            RestResult<Object> result = captchaVerificationService.verify(request);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("对 {} 请求校验验证码成功，请求参数为:{}", url, request.getParameterMap());
             }
+            request.setAttribute(CaptchaVerificationService.class.getName(), result);
             captchaVerificationInterceptors.forEach(a -> a.postVerify(request, response));
             if (getVerifySuccessDelete(request)) {
                 captchaVerificationService.delete(request);

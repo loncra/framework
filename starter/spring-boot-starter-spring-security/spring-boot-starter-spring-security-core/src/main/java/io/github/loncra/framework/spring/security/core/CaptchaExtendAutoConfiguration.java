@@ -4,7 +4,7 @@ import io.github.loncra.framework.captcha.CaptchaAutoConfiguration;
 import io.github.loncra.framework.captcha.CaptchaProperties;
 import io.github.loncra.framework.captcha.DelegateCaptchaService;
 import io.github.loncra.framework.captcha.intercept.Interceptor;
-import io.github.loncra.framework.spring.security.core.controller.CaptchaExtendController;
+import io.github.loncra.framework.spring.security.core.captcha.CaptchaExtendController;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

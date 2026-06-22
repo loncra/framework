@@ -292,7 +292,7 @@ public abstract class AbstractCaptchaService<B> implements CaptchaService, Captc
     }
 
     @Override
-    public RestResult<Map<String, Object>> verify(HttpServletRequest request) {
+    public RestResult<Object> verify(HttpServletRequest request) {
         BuildToken buildToken = getBuildToken(request);
 
         if (Objects.isNull(buildToken)) {
@@ -303,7 +303,7 @@ public abstract class AbstractCaptchaService<B> implements CaptchaService, Captc
     }
 
     @Override
-    public RestResult<Map<String, Object>> verifyInterceptToken(HttpServletRequest request) {
+    public RestResult<Object> verifyInterceptToken(HttpServletRequest request) {
         String token = request.getParameter(getTokenParamName());
         InterceptToken interceptToken = captchaStorageManager.getInterceptToken(token);
         if (Objects.isNull(interceptToken)) {
@@ -478,7 +478,7 @@ public abstract class AbstractCaptchaService<B> implements CaptchaService, Captc
      *
      * @return 验证结果
      */
-    protected RestResult<Map<String, Object>> verify(
+    protected RestResult<Object> verify(
             InterceptToken token,
             HttpServletRequest request
     ) {
@@ -499,12 +499,13 @@ public abstract class AbstractCaptchaService<B> implements CaptchaService, Captc
 
             onMatchesCaptchaSuccess(token, request, exist);
 
-            return RestResult.of("验证通过");
+            return RestResult.ofSuccess("验证通过", exist);
         }
         onMatchesCaptchaFailure(token, request, exist);
-        return RestResult.of("验证码不正确",
-                             HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                             ErrorCodeException.DEFAULT_EXCEPTION_CODE
+        return RestResult.of(
+                "验证码不正确",
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ErrorCodeException.DEFAULT_EXCEPTION_CODE
         );
     }
 

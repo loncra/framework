@@ -1,4 +1,4 @@
-package io.github.loncra.framework.spring.security.core.controller;
+package io.github.loncra.framework.spring.security.core.captcha;
 
 import io.github.loncra.framework.captcha.CaptchaProperties;
 import io.github.loncra.framework.captcha.DelegateCaptchaService;

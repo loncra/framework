@@ -7,6 +7,8 @@ import io.github.loncra.framework.spring.security.core.authentication.token.Audi
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.actuate.audit.AuditEvent;
 
+import java.util.Objects;
+
 /**
  * spring security 审计仓库拦截，用于根据 {@link AuthenticationProperties#getIgnoreAuditTypes()} 和 {@link AuthenticationProperties#getIgnoreAuditTypes()}
  * 过滤具体的审计类型和审计用户使用，如:登录失败，认证失败等审计类型不需要写入审计里。
@@ -34,7 +36,7 @@ public class SecurityAuditEventRepositoryWriteInterceptor implements AuditEventR
         }
 
         Object details = auditEvent.getData().get(AuditAuthenticationToken.DETAILS_KEY);
-        if (!AuditDetailsSource.class.isAssignableFrom(details.getClass())) {
+        if (Objects.isNull(details) || !AuditDetailsSource.class.isAssignableFrom(details.getClass())) {
             return false;
         }
 

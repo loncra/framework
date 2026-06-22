@@ -59,7 +59,7 @@ public interface CaptchaService {
      *
      * @return 验证结果集
      */
-    RestResult<Map<String, Object>> verify(HttpServletRequest request);
+    RestResult<Object> verify(HttpServletRequest request);
 
     /**
      * 获取验证码类型
@@ -113,7 +113,7 @@ public interface CaptchaService {
      *
      * @return 验证结果集
      */
-    RestResult<Map<String, Object>> verifyInterceptToken(HttpServletRequest request);
+    RestResult<Object> verifyInterceptToken(HttpServletRequest request);
 
     /**
      * 删除验证码

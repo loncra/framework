@@ -49,5 +49,5 @@ public interface Interceptor {
      *
      * @return 校验结果
      */
-    RestResult<Map<String, Object>> verifyCaptcha(HttpServletRequest request);
+    RestResult<Object> verifyCaptcha(HttpServletRequest request);
 }

@@ -139,7 +139,7 @@ public class CaptchaController {
     @RequestMapping("generateCaptcha")
     public Object generateCaptcha(HttpServletRequest request) throws Exception {
 
-        RestResult<Map<String, Object>> result = interceptor.verifyCaptcha(request);
+        RestResult<Object> result = interceptor.verifyCaptcha(request);
 
         if (result.isSuccess()) {
             return delegateCaptchaService.generateCaptcha(request);
@@ -173,7 +173,7 @@ public class CaptchaController {
      */
     @ResponseBody
     @PostMapping("verifyCaptcha")
-    public RestResult<Map<String, Object>> verifyCaptcha(HttpServletRequest request) {
+    public RestResult<Object> verifyCaptcha(HttpServletRequest request) {
         return delegateCaptchaService.verify(request);
     }
 

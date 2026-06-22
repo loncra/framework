@@ -31,9 +31,10 @@ public class TianaiCaptchaVerificationService implements CaptchaVerificationServ
     }
 
     @Override
-    public void verify(HttpServletRequest request) {
-        RestResult<Map<String, Object>> result = tianaiCaptchaService.verify(request);
+    public RestResult<Object> verify(HttpServletRequest request) {
+        RestResult<Object> result = tianaiCaptchaService.verify(request);
         Assert.isTrue(result.isSuccess(), result.getMessage());
+        return result;
     }
 
     @Override

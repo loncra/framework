@@ -1,5 +1,6 @@
 package io.github.loncra.framework.captcha.filter;
 
+import io.github.loncra.framework.commons.RestResult;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public interface CaptchaVerificationService {
      *
      * @param request http servlet request
      */
-    void verify(HttpServletRequest request);
+    RestResult<Object> verify(HttpServletRequest request);
 
     /**
      * 删除验证码

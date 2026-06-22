@@ -8,7 +8,6 @@ import io.github.loncra.framework.spring.security.core.authentication.TypeSecuri
 import io.github.loncra.framework.spring.security.core.authentication.cache.CacheManager;
 import io.github.loncra.framework.spring.security.core.authentication.cache.support.InMemoryCacheManager;
 import io.github.loncra.framework.spring.security.core.authentication.config.AuthenticationProperties;
-import io.github.loncra.framework.spring.security.core.authentication.config.CaptchaVerificationProperties;
 import io.github.loncra.framework.spring.security.core.authentication.config.PluginProperties;
 import io.github.loncra.framework.spring.security.core.authentication.handler.JsonAuthenticationFailureHandler;
 import io.github.loncra.framework.spring.security.core.authentication.handler.JsonAuthenticationFailureResponse;
@@ -54,7 +53,6 @@ import java.util.stream.Collectors;
 @EnableConfigurationProperties({
         AuthenticationProperties.class,
         PluginProperties.class,
-        CaptchaVerificationProperties.class,
         ControllerAuditProperties.class
 })
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
