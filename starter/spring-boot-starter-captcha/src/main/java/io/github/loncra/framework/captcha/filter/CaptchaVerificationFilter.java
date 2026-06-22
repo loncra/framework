@@ -28,6 +28,8 @@ public class CaptchaVerificationFilter extends OncePerRequestFilter {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(CaptchaVerificationFilter.class);
 
+    public final static String ATTR_NAME = CaptchaVerificationFilter.class.getName() + ALREADY_FILTERED_SUFFIX;
+
     private final CaptchaProperties captchaProperties;
 
     private final List<CaptchaVerificationService> captchaVerificationServices;
@@ -86,7 +88,7 @@ public class CaptchaVerificationFilter extends OncePerRequestFilter {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("对 {} 请求校验验证码成功，请求参数为:{}", url, request.getParameterMap());
             }
-            request.setAttribute(CaptchaVerificationFilter.class.getName(), result);
+            request.setAttribute(ATTR_NAME, result.getData());
             captchaVerificationInterceptors.forEach(a -> a.postVerify(request, response));
             if (getVerifySuccessDelete(request)) {
                 captchaVerificationService.delete(request);
