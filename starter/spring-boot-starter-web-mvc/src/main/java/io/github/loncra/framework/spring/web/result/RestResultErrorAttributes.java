@@ -5,6 +5,7 @@ import io.github.loncra.framework.commons.RestResult;
 import io.github.loncra.framework.commons.exception.ErrorCodeException;
 import io.github.loncra.framework.commons.exception.ServiceException;
 import io.github.loncra.framework.commons.exception.SystemException;
+import io.github.loncra.framework.spring.web.observability.WebMvcObservabilityHandler;
 import io.github.loncra.framework.spring.web.result.error.ErrorResultResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,20 +64,28 @@ public class RestResultErrorAttributes extends DefaultErrorAttributes {
     private final List<HttpStatus> supportHttpStatus;
 
     /**
+     * Web MVC 可观测性处理器
+     */
+    private final WebMvcObservabilityHandler observabilityHandler;
+
+    /**
      * 创建一个 rest 格式的全局错误实现
      *
-     * @param resultResolvers   错误结果解析器列表
-     * @param supportException  支持的异常抛出消息的类
-     * @param supportHttpStatus 支持的 http 响应状态
+     * @param resultResolvers       错误结果解析器列表
+     * @param supportException      支持的异常抛出消息的类
+     * @param supportHttpStatus     支持的 http 响应状态
+     * @param observabilityHandler  Web MVC 可观测性处理器
      */
     public RestResultErrorAttributes(
             List<ErrorResultResolver> resultResolvers,
             List<Class<? extends Exception>> supportException,
-            List<HttpStatus> supportHttpStatus
+            List<HttpStatus> supportHttpStatus,
+            WebMvcObservabilityHandler observabilityHandler
     ) {
         this.resultResolvers = resultResolvers;
         this.supportException = supportException;
         this.supportHttpStatus = supportHttpStatus;
+        this.observabilityHandler = observabilityHandler;
     }
 
     /**
@@ -125,10 +134,16 @@ public class RestResultErrorAttributes extends DefaultErrorAttributes {
             else if (supportException.stream().anyMatch(e -> e.isAssignableFrom(error.getClass()))) {
                 result.setMessage(error.getMessage());
             }
+            observabilityHandler.recordError(error);
             LOGGER.error("服务器异常", error);
         }
         else {
             LOGGER.error("服务器异常:{}", result);
+        }
+
+        observabilityHandler.enrichRestResult(result, true);
+        if (result.getExecuteCode() != null) {
+            observabilityHandler.recordErrorCode(result.getExecuteCode());
         }
 
         webRequest.setAttribute(DEFAULT_ERROR_EXECUTE_ATTR_NAME, true, RequestAttributes.SCOPE_REQUEST);

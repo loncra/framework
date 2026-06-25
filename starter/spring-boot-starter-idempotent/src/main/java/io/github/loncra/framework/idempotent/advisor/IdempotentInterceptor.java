@@ -2,10 +2,14 @@ package io.github.loncra.framework.idempotent.advisor;
 
 import io.github.loncra.framework.commons.CastUtils;
 import io.github.loncra.framework.commons.TimeProperties;
+import io.github.loncra.framework.commons.exception.SystemException;
 import io.github.loncra.framework.idempotent.annotation.Idempotent;
 import io.github.loncra.framework.idempotent.config.IdempotentProperties;
 import io.github.loncra.framework.idempotent.exception.IdempotentException;
 import io.github.loncra.framework.idempotent.generator.ValueGenerator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
@@ -30,8 +34,11 @@ import java.util.Objects;
  */
 public class IdempotentInterceptor implements MethodInterceptor {
 
-
     public static final String DEFAULT_EXCEPTION = "请不要过快的操作";
+
+    public static final String IDEMPOTENT_CONFLICT_COUNTER = "loncra.idempotent.conflict";
+
+    public static final String IDEMPOTENT_OBSERVATION_NAME = "loncra.idempotent.check";
 
     /**
      * redisson 客户端
@@ -46,6 +53,17 @@ public class IdempotentInterceptor implements MethodInterceptor {
      * 幂等配置
      */
     private final IdempotentProperties properties;
+
+    /**
+     * Observation 注册表
+     */
+    private final ObservationRegistry observationRegistry;
+
+    /**
+     * 指标注册表
+     */
+    private final MeterRegistry meterRegistry;
+
     /**
      * 参数名称发现者，用于获取 Idempotent 注解下的方法参数细信息
      */
@@ -54,11 +72,15 @@ public class IdempotentInterceptor implements MethodInterceptor {
     public IdempotentInterceptor(
             RedissonClient redissonClient,
             ValueGenerator valueGenerator,
-            IdempotentProperties properties
+            IdempotentProperties properties,
+            ObservationRegistry observationRegistry,
+            MeterRegistry meterRegistry
     ) {
         this.redissonClient = redissonClient;
         this.valueGenerator = valueGenerator;
         this.properties = properties;
+        this.observationRegistry = observationRegistry;
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
@@ -76,12 +98,37 @@ public class IdempotentInterceptor implements MethodInterceptor {
             return invocation.proceed();
         }
 
+        if (observationRegistry == null) {
+            return invokeIdempotent(idempotent, invocation);
+        }
+
+        return Observation.createNotStarted(IDEMPOTENT_OBSERVATION_NAME, observationRegistry)
+                .observe(() -> invokeIdempotent(idempotent, invocation));
+    }
+
+    private Object invokeIdempotent(Idempotent idempotent, MethodInvocation invocation) {
         if (isIdempotent(idempotent, invocation.getMethod(), invocation.getArguments())) {
+            if (meterRegistry != null) {
+                meterRegistry.counter(IDEMPOTENT_CONFLICT_COUNTER).increment();
+            }
+            if (observationRegistry != null) {
+                Observation current = observationRegistry.getCurrentObservation();
+                if (current != null) {
+                    current.lowCardinalityKeyValue("loncra.idempotent.result", "conflict");
+                }
+            }
             throw new IdempotentException(idempotent.exception());
         }
 
-        return invocation.proceed();
-
+        try {
+            return invocation.proceed();
+        }
+        catch (Throwable throwable) {
+            if (throwable instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            throw new SystemException(throwable);
+        }
     }
 
     /**

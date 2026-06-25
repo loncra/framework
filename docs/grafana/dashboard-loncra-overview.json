@@ -1,0 +1,61 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count[5m]))",
+          "legendFormat": "http requests"
+        }
+      ],
+      "title": "HTTP Request Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(loncra_idempotent_conflict_total[5m]))",
+          "legendFormat": "idempotent conflict"
+        },
+        {
+          "expr": "sum(rate(loncra_concurrent_conflict_total[5m]))",
+          "legendFormat": "concurrent conflict"
+        }
+      ],
+      "title": "Loncra Idempotent / Concurrent Conflicts",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 39,
+  "title": "Loncra Overview",
+  "uid": "loncra-overview",
+  "version": 1
+}

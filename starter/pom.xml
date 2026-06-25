@@ -35,6 +35,7 @@
         <module>spring-boot-starter-citic</module>
         <module>spring-boot-starter-allin-pay</module>
         <module>spring-boot-starter-datasource</module>
+        <module>spring-boot-starter-observability</module>
     </modules>
 
 </project>

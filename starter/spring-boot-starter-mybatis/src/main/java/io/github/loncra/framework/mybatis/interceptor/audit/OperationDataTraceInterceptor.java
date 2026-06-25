@@ -1,6 +1,8 @@
 package io.github.loncra.framework.mybatis.interceptor.audit;
 
 import io.github.loncra.framework.commons.CastUtils;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import org.apache.commons.collections4.CollectionUtils;
@@ -34,6 +36,8 @@ import java.util.stream.Collectors;
 )
 public class OperationDataTraceInterceptor implements Interceptor {
 
+    public static final String OPERATION_TRACE_OBSERVATION_NAME = "loncra.operation.trace";
+
     /**
      * 移除转义字符的正则表达式
      */
@@ -50,12 +54,22 @@ public class OperationDataTraceInterceptor implements Interceptor {
     private final OperationDataTraceRepository operationDataTraceRepository;
 
     /**
+     * Observation 注册表
+     */
+    private final ObservationRegistry observationRegistry;
+
+    /**
      * 创建一个操作数据追踪拦截器
      *
      * @param operationDataTraceRepository 操作数据追踪解析器
+     * @param observationRegistry          Observation 注册表，可为 null
      */
-    public OperationDataTraceInterceptor(OperationDataTraceRepository operationDataTraceRepository) {
+    public OperationDataTraceInterceptor(
+            OperationDataTraceRepository operationDataTraceRepository,
+            ObservationRegistry observationRegistry
+    ) {
         this.operationDataTraceRepository = operationDataTraceRepository;
+        this.observationRegistry = observationRegistry;
     }
 
     /**
@@ -95,18 +109,32 @@ public class OperationDataTraceInterceptor implements Interceptor {
         List<OperationDataTraceRecord> records = operationDataTraceRepository.createOperationDataTraceRecord(mappedStatement, statement, parameter);
 
         if (CollectionUtils.isNotEmpty(records)) {
-            Map<String, List<OperationDataTraceRecord>> grouping = records.stream()
-                    .collect(Collectors.groupingBy(g -> g.getData().getTarget()));
-            for (Map.Entry<String, List<OperationDataTraceRecord>> entry : grouping.entrySet()) {
-                operationDataTraceRepository.getOperationDataTraceRecordHooks()
-                        .stream()
-                        .filter(s -> s.isSupport(entry.getKey()))
-                        .forEach(s -> entry.getValue().forEach(s::preSaveOperationDataTraceRecord));
+            Runnable saveAction = () -> saveRecords(records);
+            if (observationRegistry != null) {
+                OperationDataTraceRecord first = records.getFirst();
+                Observation.createNotStarted(OPERATION_TRACE_OBSERVATION_NAME, observationRegistry)
+                        .lowCardinalityKeyValue("db.operation.type", mappedStatement.getSqlCommandType().name())
+                        .lowCardinalityKeyValue("db.operation.target", first.getData().getTarget())
+                        .observe(saveAction);
             }
-            operationDataTraceRepository.saveOperationDataTraceRecord(records);
+            else {
+                saveAction.run();
+            }
         }
 
         return result;
+    }
+
+    private void saveRecords(List<OperationDataTraceRecord> records) {
+        Map<String, List<OperationDataTraceRecord>> grouping = records.stream()
+                .collect(Collectors.groupingBy(g -> g.getData().getTarget()));
+        for (Map.Entry<String, List<OperationDataTraceRecord>> entry : grouping.entrySet()) {
+            operationDataTraceRepository.getOperationDataTraceRecordHooks()
+                    .stream()
+                    .filter(s -> s.isSupport(entry.getKey()))
+                    .forEach(s -> entry.getValue().forEach(s::preSaveOperationDataTraceRecord));
+        }
+        operationDataTraceRepository.saveOperationDataTraceRecord(records);
     }
 
 }

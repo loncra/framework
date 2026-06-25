@@ -1,0 +1,50 @@
+{
+  "groups": [
+    {
+      "name": "io.github.loncra"
+    },
+    {
+      "name": "loncra.framework.observability",
+      "type": "io.github.loncra.framework.observability.config.ObservabilityProperties",
+      "sourceType": "io.github.loncra.framework.observability.config.ObservabilityProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "loncra.framework.observability.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否开启 loncra 可观测性支持.",
+      "defaultValue": true
+    },
+    {
+      "name": "loncra.framework.observability.tracing.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用链路追踪.",
+      "defaultValue": true
+    },
+    {
+      "name": "loncra.framework.observability.logging.correlation-enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否启用日志 MDC traceId/spanId 关联.",
+      "defaultValue": true
+    },
+    {
+      "name": "loncra.framework.observability.audit-correlation.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否向 AuditEvent.data 注入 traceId 等字段.",
+      "defaultValue": true
+    },
+    {
+      "name": "loncra.framework.observability.response-metadata.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否向 RestResult.metadata 回传 traceId 等字段.",
+      "defaultValue": true
+    },
+    {
+      "name": "loncra.framework.observability.metrics.enabled",
+      "type": "java.lang.Boolean",
+      "description": "是否注册 loncra 框架级自定义指标.",
+      "defaultValue": true
+    }
+  ]
+}

@@ -274,6 +274,12 @@
 
             <dependency>
                 <groupId>io.github.loncra.framework</groupId>
+                <artifactId>spring-boot-starter-observability</artifactId>
+                <version>${loncra.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.github.loncra.framework</groupId>
                 <artifactId>spring-boot-starter-minio</artifactId>
                 <version>${loncra.framework.version}</version>
             </dependency>

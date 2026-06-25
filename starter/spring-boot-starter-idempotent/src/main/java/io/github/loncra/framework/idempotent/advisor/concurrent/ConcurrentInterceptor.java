@@ -7,7 +7,11 @@ import io.github.loncra.framework.idempotent.LockType;
 import io.github.loncra.framework.idempotent.annotation.Concurrent;
 import io.github.loncra.framework.idempotent.annotation.ConcurrentElements;
 import io.github.loncra.framework.idempotent.exception.ConcurrentException;
+import io.github.loncra.framework.idempotent.exception.ConcurrentException;
+import io.github.loncra.framework.idempotent.exception.IdempotentException;
 import io.github.loncra.framework.idempotent.generator.ValueGenerator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.ObservationRegistry;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,6 +37,10 @@ public class ConcurrentInterceptor implements MethodInterceptor {
 
     public static final String DEFAULT_EXCEPTION = "请不要重复操作";
 
+    public static final String CONCURRENT_CONFLICT_COUNTER = "loncra.concurrent.conflict";
+
+    public static final String CONCURRENT_OBSERVATION_NAME = "loncra.concurrent.check";
+
     /**
      * redisson 客户端
      */
@@ -44,17 +52,33 @@ public class ConcurrentInterceptor implements MethodInterceptor {
     private final ValueGenerator valueGenerator;
 
     /**
+     * Observation 注册表
+     */
+    private final ObservationRegistry observationRegistry;
+
+    /**
+     * 指标注册表
+     */
+    private final MeterRegistry meterRegistry;
+
+    /**
      * 构造函数
      *
-     * @param redissonClient Redisson 客户端
-     * @param valueGenerator 值生成器
+     * @param redissonClient        Redisson 客户端
+     * @param valueGenerator        值生成器
+     * @param observationRegistry   Observation 注册表，可为 null
+     * @param meterRegistry         指标注册表，可为 null
      */
     public ConcurrentInterceptor(
             RedissonClient redissonClient,
-            ValueGenerator valueGenerator
+            ValueGenerator valueGenerator,
+            ObservationRegistry observationRegistry,
+            MeterRegistry meterRegistry
     ) {
         this.redissonClient = redissonClient;
         this.valueGenerator = valueGenerator;
+        this.observationRegistry = observationRegistry;
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
@@ -81,7 +105,37 @@ public class ConcurrentInterceptor implements MethodInterceptor {
                 .peek(s -> s.setKey(Objects.toString(valueGenerator.generate(s.getKey(), invocation.getMethod(), invocation.getArguments()))))
                 .collect(Collectors.toList());
 
-        return invoke(concurrentConfigs, () -> this.invocationProceed(invocation));
+        if (observationRegistry == null) {
+            return invokeWithConflictMetric(concurrentConfigs, () -> this.invocationProceed(invocation));
+        }
+
+        return io.micrometer.observation.Observation.createNotStarted(CONCURRENT_OBSERVATION_NAME, observationRegistry)
+                .observe(() -> invokeWithConflictMetric(concurrentConfigs, () -> this.invocationProceed(invocation)));
+    }
+
+    private <R> R invokeWithConflictMetric(
+            List<ConcurrentConfig> concurrentConfigs,
+            Supplier<R> supplier
+    ) {
+        try {
+            return invoke(concurrentConfigs, supplier);
+        }
+        catch (ConcurrentException exception) {
+            recordConcurrentConflict("conflict");
+            throw exception;
+        }
+    }
+
+    private void recordConcurrentConflict(String result) {
+        if (meterRegistry != null) {
+            meterRegistry.counter(CONCURRENT_CONFLICT_COUNTER).increment();
+        }
+        if (observationRegistry != null) {
+            io.micrometer.observation.Observation current = observationRegistry.getCurrentObservation();
+            if (current != null) {
+                current.lowCardinalityKeyValue("loncra.concurrent.result", result);
+            }
+        }
     }
 
     private <R> R invoke(
@@ -277,6 +331,7 @@ public class ConcurrentInterceptor implements MethodInterceptor {
         boolean tryLock = tryLock(lock, waitTime, leaseTime);
 
         if (!tryLock) {
+            recordConcurrentConflict("conflict");
             throw new ConcurrentException(exception);
         }
 
@@ -424,6 +479,7 @@ public class ConcurrentInterceptor implements MethodInterceptor {
         boolean tryLock = tryLock(lock, waitTime, leaseTime);
 
         if (!tryLock) {
+            recordConcurrentConflict("conflict");
             throw new ConcurrentException(exception);
         }
 

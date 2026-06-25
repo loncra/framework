@@ -17,8 +17,10 @@ import io.github.loncra.framework.idempotent.exception.IdempotentException;
 import io.github.loncra.framework.spring.web.config.SpringWebMvcProperties;
 import io.github.loncra.framework.spring.web.device.DeviceResolverRequestFilter;
 import io.github.loncra.framework.spring.web.endpoint.EnumerateEndpoint;
+import io.github.loncra.framework.commons.observability.TraceContextContributor;
 import io.github.loncra.framework.spring.web.interceptor.CustomClientHttpRequestInterceptor;
 import io.github.loncra.framework.spring.web.json.MimeTypeDeserializer;
+import io.github.loncra.framework.spring.web.observability.WebMvcObservabilityHandler;
 import io.github.loncra.framework.spring.web.result.RestResponseBodyAdvice;
 import io.github.loncra.framework.spring.web.result.RestResultErrorAttributes;
 import io.github.loncra.framework.spring.web.result.error.ErrorResultResolver;
@@ -26,6 +28,8 @@ import io.github.loncra.framework.spring.web.result.error.support.BindingResultE
 import io.github.loncra.framework.spring.web.result.error.support.ErrorCodeResultResolver;
 import io.github.loncra.framework.spring.web.result.error.support.IdempotentErrorResultResolver;
 import io.github.loncra.framework.spring.web.result.error.support.MissingServletRequestParameterResolver;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -72,26 +76,51 @@ public class SpringWebMvcAutoConfiguration {
     @ConditionalOnMissingBean(RestResultErrorAttributes.class)
     public RestResultErrorAttributes servletRestResultErrorAttributes(
             List<ErrorResultResolver> resultResolvers,
-            SpringWebMvcProperties properties
+            SpringWebMvcProperties properties,
+            WebMvcObservabilityHandler observabilityHandler
     ) {
         return new RestResultErrorAttributes(
                 resultResolvers,
                 properties.getSupportException(),
-                properties.getSupportHttpStatus()
+                properties.getSupportHttpStatus(),
+                observabilityHandler
         );
+    }
+
+    /**
+     * 创建 WebMvcObservabilityHandler Bean
+     *
+     * @param traceContextContributor 链路上下文贡献者
+     * @param observationRegistry     Observation 注册表
+     * @param meterRegistry           指标注册表
+     *
+     * @return WebMvcObservabilityHandler 实例
+     */
+    @Bean
+    @ConditionalOnMissingBean(WebMvcObservabilityHandler.class)
+    public WebMvcObservabilityHandler webMvcObservabilityHandler(
+            ObjectProvider<TraceContextContributor> traceContextContributor,
+            ObjectProvider<ObservationRegistry> observationRegistry,
+            ObjectProvider<MeterRegistry> meterRegistry
+    ) {
+        return new WebMvcObservabilityHandler(traceContextContributor, observationRegistry, meterRegistry);
     }
 
     /**
      * 创建 RestResponseBodyAdvice Bean
      *
-     * @param properties SpringWebMvcProperties 配置属性
+     * @param properties            SpringWebMvcProperties 配置属性
+     * @param observabilityHandler  Web MVC 可观测性处理器
      *
      * @return RestResponseBodyAdvice 实例
      */
     @Bean
     @ConditionalOnMissingBean(RestResponseBodyAdvice.class)
-    public RestResponseBodyAdvice restResponseBodyAdvice(SpringWebMvcProperties properties) {
-        return new RestResponseBodyAdvice(properties);
+    public RestResponseBodyAdvice restResponseBodyAdvice(
+            SpringWebMvcProperties properties,
+            WebMvcObservabilityHandler observabilityHandler
+    ) {
+        return new RestResponseBodyAdvice(properties, observabilityHandler);
     }
 
     /**

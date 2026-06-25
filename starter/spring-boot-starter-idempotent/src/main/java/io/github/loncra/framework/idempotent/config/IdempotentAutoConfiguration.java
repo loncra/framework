@@ -7,6 +7,7 @@ import io.github.loncra.framework.idempotent.advisor.concurrent.ConcurrentPointc
 import io.github.loncra.framework.idempotent.generator.SpelExpressionValueGenerator;
 import org.redisson.api.RedissonClient;
 import org.redisson.spring.starter.RedissonAutoConfigurationV4;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -42,11 +43,18 @@ public class IdempotentAutoConfiguration {
     @ConditionalOnMissingBean(ConcurrentInterceptor.class)
     public ConcurrentInterceptor concurrentInterceptor(
             RedissonClient redissonClient,
-            IdempotentProperties idempotentProperties
+            IdempotentProperties idempotentProperties,
+            ObjectProvider<io.micrometer.observation.ObservationRegistry> observationRegistry,
+            ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistry
     ) {
         SpelExpressionValueGenerator generator = new SpelExpressionValueGenerator();
         generator.setPrefix(idempotentProperties.getConcurrentKeyPrefix());
-        return new ConcurrentInterceptor(redissonClient, generator);
+        return new ConcurrentInterceptor(
+                redissonClient,
+                generator,
+                observationRegistry.getIfAvailable(),
+                meterRegistry.getIfAvailable()
+        );
     }
 
     /**
@@ -81,11 +89,19 @@ public class IdempotentAutoConfiguration {
     @ConditionalOnMissingBean(IdempotentInterceptor.class)
     public IdempotentInterceptor idempotentInterceptor(
             RedissonClient redissonClient,
-            IdempotentProperties idempotentProperties
+            IdempotentProperties idempotentProperties,
+            ObjectProvider<io.micrometer.observation.ObservationRegistry> observationRegistry,
+            ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistry
     ) {
         SpelExpressionValueGenerator generator = new SpelExpressionValueGenerator();
         generator.setPrefix(idempotentProperties.getIdempotentKeyPrefix());
-        return new IdempotentInterceptor(redissonClient, generator, idempotentProperties);
+        return new IdempotentInterceptor(
+                redissonClient,
+                generator,
+                idempotentProperties,
+                observationRegistry.getIfAvailable(),
+                meterRegistry.getIfAvailable()
+        );
     }
 
     /**

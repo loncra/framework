@@ -6,6 +6,7 @@ import io.github.loncra.framework.commons.exception.ErrorCodeException;
 import io.github.loncra.framework.security.filter.result.IgnoreOrDesensitizeResultHolder;
 import io.github.loncra.framework.spring.web.config.SpringWebMvcProperties;
 import io.github.loncra.framework.spring.web.mvc.SpringMvcUtils;
+import io.github.loncra.framework.spring.web.observability.WebMvcObservabilityHandler;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -61,12 +62,22 @@ public class RestResponseBodyAdvice implements ResponseBodyAdvice<Object> {
     private final SpringWebMvcProperties properties;
 
     /**
+     * Web MVC 可观测性处理器
+     */
+    private final WebMvcObservabilityHandler observabilityHandler;
+
+    /**
      * 创建一个 REST 响应体统一格式实现类
      *
-     * @param properties Spring Web MVC 配置属性
+     * @param properties            Spring Web MVC 配置属性
+     * @param observabilityHandler  Web MVC 可观测性处理器
      */
-    public RestResponseBodyAdvice(SpringWebMvcProperties properties) {
+    public RestResponseBodyAdvice(
+            SpringWebMvcProperties properties,
+            WebMvcObservabilityHandler observabilityHandler
+    ) {
         this.properties = properties;
+        this.observabilityHandler = observabilityHandler;
     }
 
     /**
@@ -165,11 +176,17 @@ public class RestResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                 url = prefix + url;
             }
             result.getMetadata().put(RestResult.DEFAULT_URL_NAME, url);
+            observabilityHandler.enrichRestResult(result, true);
             return IgnoreOrDesensitizeResultHolder.convert(result);
-        } else {
-            return IgnoreOrDesensitizeResultHolder.convert(body);
         }
 
+        if (Objects.nonNull(body) && RestResult.class.isAssignableFrom(body.getClass())) {
+            RestResult<Object> result = CastUtils.cast(body);
+            observabilityHandler.enrichRestResult(result, false);
+            return IgnoreOrDesensitizeResultHolder.convert(result);
+        }
+
+        return IgnoreOrDesensitizeResultHolder.convert(body);
     }
 
 }

@@ -46,6 +46,26 @@ public class RestResult<T> implements Serializable {
     public static final String DEFAULT_URL_NAME = "url";
 
     /**
+     * 链路追踪 id 元数据键名
+     */
+    public static final String DEFAULT_TRACE_ID_NAME = "traceId";
+
+    /**
+     * 当前 span id 元数据键名
+     */
+    public static final String DEFAULT_SPAN_ID_NAME = "spanId";
+
+    /**
+     * 应用名称元数据键名
+     */
+    public static final String DEFAULT_APPLICATION_NAME = "applicationName";
+
+    /**
+     * 可观测性关联标记元数据键名
+     */
+    public static final String DEFAULT_OBSERVABILITY_CORRELATION_NAME = "observabilityCorrelation";
+
+    /**
      * 信息
      */
     private String message;

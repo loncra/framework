@@ -1,6 +1,9 @@
 package io.github.loncra.framework.spring.security.core.audit;
 
 import io.github.loncra.framework.commons.CastUtils;
+import io.github.loncra.framework.spring.security.core.entity.ControllerAuditEventMetadata;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.actuate.audit.AuditEvent;
@@ -30,10 +33,17 @@ public class ControllerAuditHandlerInterceptor implements ApplicationEventPublis
      */
     private ApplicationEventPublisher applicationEventPublisher;
 
+    /**
+     * Observation 注册表
+     */
+    private final ObservationRegistry observationRegistry;
+
     public ControllerAuditHandlerInterceptor(
-            List<AuditEventInterceptor> auditEventInterceptors
+            List<AuditEventInterceptor> auditEventInterceptors,
+            ObservationRegistry observationRegistry
     ) {
         this.auditEventInterceptors = auditEventInterceptors;
+        this.observationRegistry = observationRegistry;
     }
 
     @Override
@@ -81,10 +91,40 @@ public class ControllerAuditHandlerInterceptor implements ApplicationEventPublis
             }
             AuditEvent auditEvent = CastUtils.cast(event);
             AuditEvent saveEvent = interceptor.afterCompletion(request, response, handlerMethod, ex, auditEvent);
+            enrichControllerAuditObservation(request, saveEvent, ex);
             // 推送审计事件
             applicationEventPublisher.publishEvent(new AuditApplicationEvent(saveEvent));
         }
 
+    }
+
+    private void enrichControllerAuditObservation(
+            HttpServletRequest request,
+            AuditEvent auditEvent,
+            Exception ex
+    ) {
+        if (observationRegistry == null) {
+            return;
+        }
+        Observation current = observationRegistry.getCurrentObservation();
+        if (current == null) {
+            return;
+        }
+        current.lowCardinalityKeyValue("loncra.audit.type", auditEvent.getType());
+        current.lowCardinalityKeyValue("loncra.audit.principal", auditEvent.getPrincipal());
+        Object metadata = auditEvent.getData().get(io.github.loncra.framework.commons.RestResult.DEFAULT_METADATA_NAME);
+        if (metadata instanceof ControllerAuditEventMetadata controllerMetadata) {
+            current.lowCardinalityKeyValue("http.method", controllerMetadata.getHttpMethod());
+            if (controllerMetadata.getExecuteStatus() != null) {
+                current.lowCardinalityKeyValue(
+                        "loncra.audit.execute_status",
+                        controllerMetadata.getExecuteStatus().name()
+                );
+            }
+        }
+        if (ex != null) {
+            current.error(ex);
+        }
     }
 
     @Override

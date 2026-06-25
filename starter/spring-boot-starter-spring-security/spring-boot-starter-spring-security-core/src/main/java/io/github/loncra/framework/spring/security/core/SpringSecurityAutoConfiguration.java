@@ -84,10 +84,12 @@ public class SpringSecurityAutoConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "loncra.framework.security.audit", name = "enabled", matchIfMissing = true, havingValue = "true")
     public ControllerAuditHandlerInterceptor controllerAuditHandlerInterceptor(
-            ObjectProvider<AuditEventInterceptor> auditEventInterceptors
+            ObjectProvider<AuditEventInterceptor> auditEventInterceptors,
+            ObjectProvider<io.micrometer.observation.ObservationRegistry> observationRegistry
     ) {
         return new ControllerAuditHandlerInterceptor(
-                auditEventInterceptors.stream().collect(Collectors.toList())
+                auditEventInterceptors.stream().collect(Collectors.toList()),
+                observationRegistry.getIfAvailable()
         );
     }
 
