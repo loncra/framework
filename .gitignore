@@ -12,6 +12,7 @@
 .idea/
 .vscode/
 */target/
+.cursor/
 
 # Package Files #
 *.jar
