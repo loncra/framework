@@ -116,6 +116,28 @@ docker compose -f docs/docker-compose-observability.yml up -d
 - Grafana: http://localhost:3000
 - 应用 OTLP 端点: `http://localhost:4318/v1/traces`（或经 otel-collector `4319`）
 
+### 可运行示例（test 目录）
+
+本模块 `src/test` 下自带一个可直接运行的示例，无需额外建模块：
+
+- 入口：`io.github.loncra.framework.observability.test.ObservabilityStarterApplication`
+- 控制器/服务：`OrderController` + `OrderService`（`@Observed` 形成子 span）
+- 配置：`src/test/resources/application.yml`（已配好 OTLP 上报 + 全量采样）
+
+直接在 IDE 里运行 `ObservabilityStarterApplication` 的 `main` 方法（端口 8080），然后：
+
+```bash
+# Windows PowerShell 请用 curl.exe，直接 curl 是 Invoke-WebRequest 别名
+curl.exe http://localhost:8080/api/orders/1001         # 正常链路
+curl.exe http://localhost:8080/api/orders/1001/error   # 异常链路
+```
+
+正常响应的 `metadata` 会带上 `traceId` / `spanId` / `applicationName`，
+随后在 Grafana → Explore → Tempo 用该 `traceId` 即可看到
+`GET /api/orders/{id}` → `order-load` → `order-enrich` 的完整 Span 树。
+
+> 单元测试通过 `@TestPropertySource` 关闭了 tracing，不会向 Tempo 上报，互不影响。
+
 ## 排查手册
 
 1. **用户报错** → 前端拿到 `metadata.traceId`

@@ -43,7 +43,7 @@ class ObservabilityAutoConfigurationTest {
 
     @Test
     void demoEndpointIsReachable() throws Exception {
-        mockMvc.perform(get("/demo/hello"))
+        mockMvc.perform(get("/api/orders/123"))
                 .andExpect(status().isOk());
     }
 
