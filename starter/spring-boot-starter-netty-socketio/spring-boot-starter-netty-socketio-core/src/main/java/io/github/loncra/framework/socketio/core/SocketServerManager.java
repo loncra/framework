@@ -8,6 +8,7 @@ import io.github.loncra.framework.commons.CastUtils;
 import io.github.loncra.framework.commons.RestResult;
 import io.github.loncra.framework.commons.exception.ServiceException;
 import io.github.loncra.framework.commons.exception.SystemException;
+import io.github.loncra.framework.commons.id.metadata.TypeIdNameMetadata;
 import io.github.loncra.framework.socketio.api.SocketPrincipal;
 import io.github.loncra.framework.socketio.api.SocketUserMessage;
 import io.github.loncra.framework.socketio.api.enumerate.ConnectStatus;
@@ -19,6 +20,7 @@ import io.github.loncra.framework.socketio.core.resolver.MessageSenderResolver;
 import io.github.loncra.framework.spring.security.core.authentication.AccessTokenContextRepository;
 import io.github.loncra.framework.spring.security.core.authentication.token.AuditAuthenticationToken;
 import io.github.loncra.framework.spring.security.core.entity.AuditAuthenticationSuccessDetails;
+import io.github.loncra.framework.spring.security.core.entity.support.MobileSecurityPrincipal;
 import io.github.loncra.framework.spring.web.device.DeviceUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
@@ -177,6 +179,22 @@ public class SocketServerManager implements AuthorizationListener, ConnectListen
                 socketToken.getFullName(),
                 client.getAllRooms()
         );
+    }
+
+    public List<SocketIOClient> getPrincipalClients(String principal) {
+        List<SocketIOClient> result = new LinkedList<>();
+        TypeIdNameMetadata type = TypeIdNameMetadata.ofPrincipalString(principal);
+        SecurityContext context = getAccessTokenContextRepository().getSecurityContext(type.getType(), type.getId());
+        if (Objects.isNull(context)) {
+            return result;
+        }
+        getSocketPrincipals(context)
+                .stream()
+                .map(MobileSecurityPrincipal::getDeviceIdentified)
+                .map(device -> getSocketServer().getClient(UUID.fromString(device)))
+                .filter(Objects::nonNull)
+                .forEach(result::add);
+        return result;
     }
 
     public List<SocketPrincipal> getSocketPrincipals(SecurityContext context) {

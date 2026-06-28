@@ -90,7 +90,7 @@ public class MinioAutoDeleteConfiguration implements SchedulingConfigurer {
 
                         Item item = result.get();
 
-                        if (item.isDeleteMarker()) {
+                        if (item.isDeleteMarker() || item.isDir()) {
                             continue;
                         }
 
