@@ -2,6 +2,7 @@ package io.github.loncra.framework.socketio.api;
 
 import io.github.loncra.framework.commons.RestResult;
 import io.github.loncra.framework.socketio.api.metadata.AbstractSocketMessageMetadata;
+import org.springframework.http.HttpStatus;
 
 import java.io.Serial;
 import java.util.List;
@@ -47,6 +48,18 @@ public class ReturnValueSocketResult<R> extends SocketResult {
         this.message = message;
         this.executeCode = executeCode;
         this.status = status;
+    }
+
+    /**
+     * 创建一个 带返回值的 socket 结果集实体类
+     *
+     * @param socketMessages socket 消息
+     * @return 带返回值的 socket 结果集
+     */
+    public static <T> ReturnValueSocketResult<T> of(
+            List<AbstractSocketMessageMetadata<?>> socketMessages
+    ) {
+        return ReturnValueSocketResult.of(HttpStatus.OK.getReasonPhrase(), Integer.parseInt(RestResult.SUCCESS_EXECUTE_CODE), socketMessages);
     }
 
     /**
