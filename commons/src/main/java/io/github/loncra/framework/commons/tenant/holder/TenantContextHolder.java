@@ -1,7 +1,7 @@
 package io.github.loncra.framework.commons.tenant.holder;
 
 import io.github.loncra.framework.commons.CastUtils;
-import io.github.loncra.framework.commons.tenant.SimpleTenantContext;
+import io.github.loncra.framework.commons.tenant.TenantContext;
 import io.github.loncra.framework.commons.tenant.holder.strategy.ThreadLocalTenantContextHolderStrategy;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -73,7 +73,7 @@ public class TenantContextHolder {
      *
      * @return 当前租户上下文
      */
-    public static SimpleTenantContext get() {
+    public static TenantContext get() {
         return strategy.get();
     }
 
@@ -89,7 +89,7 @@ public class TenantContextHolder {
      *
      * @param tenantContext 租户上下文
      */
-    public static void set(SimpleTenantContext tenantContext) {
+    public static void set(TenantContext tenantContext) {
         strategy.set(tenantContext);
     }
 
@@ -98,7 +98,7 @@ public class TenantContextHolder {
      *
      * @return 租户上下文
      */
-    public static SimpleTenantContext create() {
+    public static TenantContext create() {
         return strategy.create();
     }
 

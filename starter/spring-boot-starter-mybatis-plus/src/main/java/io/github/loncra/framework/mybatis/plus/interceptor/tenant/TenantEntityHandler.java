@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.mapper.Mapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
 import io.github.loncra.framework.commons.exception.SystemException;
-import io.github.loncra.framework.commons.tenant.SimpleTenantContext;
+import io.github.loncra.framework.commons.tenant.TenantContext;
 import io.github.loncra.framework.commons.tenant.TenantEntity;
 import io.github.loncra.framework.commons.tenant.holder.TenantContextHolder;
 import io.github.loncra.framework.mybatis.plus.tenant.TenantLinePolicy;
@@ -103,7 +103,7 @@ public class TenantEntityHandler implements TenantLineHandler {
 
     @Override
     public Expression getTenantId() {
-        SimpleTenantContext tenantContext = TenantContextHolder.get();
+        TenantContext tenantContext = TenantContextHolder.get();
         if (!tenantLinePolicy.tenantIdSupport(tenantContext)) {
             return null;
         }
@@ -116,7 +116,7 @@ public class TenantEntityHandler implements TenantLineHandler {
 
     @Override
     public boolean ignoreTable(String tableName) {
-        SimpleTenantContext tenantContext = TenantContextHolder.get();
+        TenantContext tenantContext = TenantContextHolder.get();
         if (!tenantLinePolicy.tenantIdSupport(tenantContext)) {
             return true;
         }

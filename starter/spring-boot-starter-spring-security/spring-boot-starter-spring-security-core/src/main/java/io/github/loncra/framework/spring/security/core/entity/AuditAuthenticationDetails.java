@@ -6,6 +6,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.util.MultiValueMap;
 
 import java.io.Serial;
+import java.util.Map;
 
 /**
  * 表单登录授权明细信息
@@ -31,16 +32,20 @@ public class AuditAuthenticationDetails extends WebAuthenticationDetails impleme
      */
     private final MultiValueMap<String, String> requestHeaders;
 
+    private final Map<String, Object> requestBody;
+
     public AuditAuthenticationDetails(
             WebAuthenticationDetails webAuthenticationDetails,
             String type,
             MultiValueMap<String, String> requestParameters,
-            MultiValueMap<String, String> requestHeaders
+            MultiValueMap<String, String> requestHeaders,
+            Map<String, Object> requestBody
     ) {
         super(webAuthenticationDetails.getRemoteAddress(), webAuthenticationDetails.getSessionId());
         this.type = type;
         this.requestParameters = requestParameters;
         this.requestHeaders = requestHeaders;
+        this.requestBody = requestBody;
     }
 
     /**
@@ -68,5 +73,14 @@ public class AuditAuthenticationDetails extends WebAuthenticationDetails impleme
      */
     public MultiValueMap<String, String> getRequestHeaders() {
         return requestHeaders;
+    }
+
+    /**
+     * 获取请求体信息
+     *
+     * @return 请求体信息
+     */
+    public Map<String, Object> getRequestBody() {
+        return requestBody;
     }
 }

@@ -88,8 +88,8 @@ public class IdValueMetadata<T, V> extends IdEntity<T> {
             boolean idValueFormat
     ) {
         if (idValueFormat) {
-            List<IdValueMetadata<T, V>> listValue = new LinkedList<>();
-            data.forEach((k, v) -> listValue.add(IdValueMetadata.of(k, v)));
+            List<IdValueMetadata<V, T>> listValue = new LinkedList<>();
+            data.forEach((k, v) -> listValue.add(IdValueMetadata.of(v,k)));
             return listValue;
         }
 

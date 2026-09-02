@@ -11,12 +11,10 @@ import io.github.loncra.framework.spring.security.core.entity.ControllerAuditEve
 import io.github.loncra.framework.spring.web.mvc.SpringMvcUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.boot.actuate.audit.AuditEvent;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.web.method.HandlerMethod;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -63,6 +61,9 @@ public class AuditableInterceptor extends AbstractAuditEventInterceptor {
         AuditEvent superEvent = super.afterCompletion(request, response, handler, ex, auditEvent);
 
         Auditable auditable = AnnotationUtils.findAnnotation(handler.getMethod(), Auditable.class);
+        if (Objects.isNull(auditable)) {
+            return superEvent;
+        }
 
         Object body = SpringMvcUtils.getRequestAttribute(RequestBodyAttributeAdviceAdapter.REQUEST_BODY_ATTRIBUTE_NAME);
         if (Objects.nonNull(body) && !auditable.ignoreProperties().ignoreRequestBody()) {
@@ -70,9 +71,9 @@ public class AuditableInterceptor extends AbstractAuditEventInterceptor {
                     superEvent.getData().get(RestResult.DEFAULT_METADATA_NAME),
                     ControllerAuditEventMetadata.class
             );
-            Map<String, Object> bodyMap = CastUtils.convertValue(body, CastUtils.MAP_TYPE_REFERENCE);
-            bodyMap.put(BeanDefinitionParserDelegate.CLASS_ATTRIBUTE, body.getClass());
-            metadata.setBody(bodyMap);
+            //Map<String, Object> bodyMap = CastUtils.convertValue(body, CastUtils.MAP_TYPE_REFERENCE);
+            //bodyMap.put(BeanDefinitionParserDelegate.CLASS_ATTRIBUTE, body.getClass());
+            metadata.setBody(body);
         }
 
         return superEvent;

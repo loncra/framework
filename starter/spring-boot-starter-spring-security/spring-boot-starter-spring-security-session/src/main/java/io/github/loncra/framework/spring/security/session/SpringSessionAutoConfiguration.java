@@ -124,7 +124,7 @@ public class SpringSessionAutoConfiguration {
         AccessTokenSessionFilter accessTokenSessionFilter = new AccessTokenSessionFilter(sessionAccessTokenContextRepository);
 
         FilterRegistrationBean<AccessTokenSessionFilter> filterRegistrationBean = new FilterRegistrationBean<>(accessTokenSessionFilter);
-        filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
         filterRegistrationBean.addUrlPatterns("/*");
 
         return filterRegistrationBean;

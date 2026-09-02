@@ -1,6 +1,6 @@
 package io.github.loncra.framework.commons.tenant.holder;
 
-import io.github.loncra.framework.commons.tenant.SimpleTenantContext;
+import io.github.loncra.framework.commons.tenant.TenantContext;
 
 /**
  * 租户上下文 结果集持有者策略
@@ -19,19 +19,19 @@ public interface TenantContextHolderStrategy {
      *
      * @return 租户上下文 结果集
      */
-    SimpleTenantContext get();
+    TenantContext get();
 
     /**
      * 设置 租户上下文 结果集
      *
      * @param result 租户上下文 结果集
      */
-    void set(SimpleTenantContext result);
+    void set(TenantContext result);
 
     /**
      * 创建 租户上下文 结果集
      *
      * @return 租户上下文 结果集
      */
-    SimpleTenantContext create();
+    TenantContext create();
 }

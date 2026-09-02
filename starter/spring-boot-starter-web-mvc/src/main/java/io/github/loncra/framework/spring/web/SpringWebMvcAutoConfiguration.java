@@ -40,6 +40,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.util.MimeType;
 import org.springframework.web.client.RestTemplate;
@@ -114,6 +115,7 @@ public class SpringWebMvcAutoConfiguration {
         int order = mvcProperties.getDeviceFilterOrderValue();
         FilterRegistrationBean<DeviceResolverRequestFilter> filterRegistrationBean = new FilterRegistrationBean<>();
         filterRegistrationBean.setFilter(new DeviceResolverRequestFilter(order));
+        filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
         filterRegistrationBean.addUrlPatterns("/*");
         filterRegistrationBean.setOrder(order);
         return filterRegistrationBean;

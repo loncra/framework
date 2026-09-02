@@ -2,6 +2,7 @@ package io.github.loncra.framework.commons.tenant.holder.strategy;
 
 
 import io.github.loncra.framework.commons.tenant.SimpleTenantContext;
+import io.github.loncra.framework.commons.tenant.TenantContext;
 import io.github.loncra.framework.commons.tenant.holder.TenantContextHolderStrategy;
 
 import java.util.Objects;
@@ -13,7 +14,7 @@ import java.util.Objects;
  */
 public class ThreadLocalTenantContextHolderStrategy implements TenantContextHolderStrategy {
 
-    private static final ThreadLocal<SimpleTenantContext> THREAD_LOCAL = new ThreadLocal<>();
+    private static final ThreadLocal<TenantContext> THREAD_LOCAL = new ThreadLocal<>();
 
     @Override
     public void clear() {
@@ -21,8 +22,8 @@ public class ThreadLocalTenantContextHolderStrategy implements TenantContextHold
     }
 
     @Override
-    public SimpleTenantContext get() {
-        SimpleTenantContext result = THREAD_LOCAL.get();
+    public TenantContext get() {
+        TenantContext result = THREAD_LOCAL.get();
 
         if (result == null) {
             result = create();
@@ -33,13 +34,13 @@ public class ThreadLocalTenantContextHolderStrategy implements TenantContextHold
     }
 
     @Override
-    public void set(SimpleTenantContext result) {
+    public void set(TenantContext result) {
         Objects.requireNonNull(result, "socket result 不能为空");
         THREAD_LOCAL.set(result);
     }
 
     @Override
-    public SimpleTenantContext create() {
+    public TenantContext create() {
         return new SimpleTenantContext();
     }
 }

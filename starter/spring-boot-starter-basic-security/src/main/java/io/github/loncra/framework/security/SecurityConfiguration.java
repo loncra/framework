@@ -31,7 +31,7 @@ public class SecurityConfiguration {
         FilterRegistrationBean<IgnoreOrDesensitizeResultFilter> filterRegistrationBean = new FilterRegistrationBean<>();
         filterRegistrationBean.setFilter(new IgnoreOrDesensitizeResultFilter(webProperties));
         filterRegistrationBean.addUrlPatterns("/*");
-        filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        filterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
         return filterRegistrationBean;
     }
 }

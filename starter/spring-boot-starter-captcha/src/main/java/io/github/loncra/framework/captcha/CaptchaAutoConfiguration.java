@@ -140,7 +140,7 @@ public class CaptchaAutoConfiguration {
         FilterRegistrationBean<CaptchaVerificationFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(captchaVerificationFilter);
         registrationBean.addUrlPatterns("/*");
-        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
 
         return registrationBean;
     }

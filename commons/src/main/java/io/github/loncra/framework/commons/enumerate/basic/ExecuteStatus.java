@@ -62,6 +62,11 @@ public enum ExecuteStatus implements NameValueEnum<Integer> {
     public static final List<ExecuteStatus> FAILURE_STATUS = Arrays.asList(Failure, Unknown);
 
     /**
+     * 待执行的状态
+     */
+    public static final List<ExecuteStatus> PENDING_STATUS = Arrays.asList(Pending, Failure, Unknown);
+
+    /**
      * 执行状态枚举
      *
      * @param name  名称
