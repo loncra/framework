@@ -32,12 +32,12 @@ public class IdempotentProperties {
     /**
      * 并发切面排序值
      */
-    private int concurrentPointcutAdvisorOrderValue = Ordered.LOWEST_PRECEDENCE;
+    private int concurrentPointcutAdvisorOrderValue = Ordered.HIGHEST_PRECEDENCE;
 
     /**
      * 幂等切面排序值
      */
-    private int idempotentPointcutAdvisorOrderValue = Ordered.LOWEST_PRECEDENCE;
+    private int idempotentPointcutAdvisorOrderValue = Ordered.HIGHEST_PRECEDENCE;
 
     /**
      * 构造函数
