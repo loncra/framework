@@ -22,12 +22,12 @@ public class IdempotentProperties {
     /**
      * 并发锁 key 前缀
      */
-    private String concurrentKeyPrefix = "concurrent:";
+    private String concurrentKeyPrefix = "loncra:framework:concurrent:";
 
     /**
      * 幂等锁 key 前缀
      */
-    private String idempotentKeyPrefix = "idempotent:";
+    private String idempotentKeyPrefix = "loncra:framework:idempotent:";
 
     /**
      * 并发切面排序值

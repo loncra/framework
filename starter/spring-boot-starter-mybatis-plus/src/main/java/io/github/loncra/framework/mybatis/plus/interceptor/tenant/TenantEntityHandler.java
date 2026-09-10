@@ -117,6 +117,9 @@ public class TenantEntityHandler implements TenantLineHandler {
     @Override
     public boolean ignoreTable(String tableName) {
         TenantContext tenantContext = TenantContextHolder.get();
+        if (tenantContext.isIgnore()) {
+            return true;
+        }
         if (!tenantLinePolicy.tenantIdSupport(tenantContext)) {
             return true;
         }

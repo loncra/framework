@@ -18,6 +18,8 @@ public class SimpleTenantContext implements TenantContext {
 
     private Map<String, Object> details;
 
+    private boolean ignore = false;
+
     public SimpleTenantContext(
             Serializable id,
             Map<String, Object> details
@@ -43,6 +45,16 @@ public class SimpleTenantContext implements TenantContext {
         return details;
     }
 
+    @Override
+    public boolean isIgnore() {
+        return ignore;
+    }
+
+    @Override
+    public void setIgnore(boolean ignore) {
+        this.ignore = ignore;
+    }
+
     public void setId(Serializable id) {
         this.id = id;
     }
@@ -50,4 +62,6 @@ public class SimpleTenantContext implements TenantContext {
     public void setDetails(Map<String, Object> details) {
         this.details = details;
     }
+
+
 }

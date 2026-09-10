@@ -23,4 +23,16 @@ public interface TenantContext extends Serializable {
      * @return 明细信息
      */
     Map<String, Object> getDetails();
+
+    /**
+     * 是否忽略租户
+     * @return true 是，否则 false
+     */
+    boolean isIgnore();
+
+    /**
+     * 设置是否忽略租户
+     * @param ignore true 是，否则 false
+     */
+    void setIgnore(boolean ignore);
 }
