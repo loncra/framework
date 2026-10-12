@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.ResolvableType;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -107,11 +108,11 @@ public class TenantEntityHandler implements TenantLineHandler {
         if (!tenantLinePolicy.tenantIdSupport(tenantContext)) {
             return null;
         }
-        String id = Objects.toString(TenantContextHolder.get().getId());
-        if (StringUtils.isEmpty(id)) {
+        Serializable tenantId = TenantContextHolder.get().getId();
+        if (Objects.isNull(tenantId) || StringUtils.isEmpty(tenantId.toString())) {
             throw new SystemException("当前请求未设置租户 ID");
         }
-        return new StringValue(id);
+        return new StringValue(tenantId.toString());
     }
 
     @Override
