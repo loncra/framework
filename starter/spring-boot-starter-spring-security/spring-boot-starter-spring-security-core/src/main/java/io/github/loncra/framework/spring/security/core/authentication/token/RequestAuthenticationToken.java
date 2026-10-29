@@ -54,9 +54,9 @@ public class RequestAuthenticationToken extends TypeAuthenticationToken {
      *
      * @return 请求头信息
      */
-    public Map<String, Object> getRequestBody() {
+    /*public Map<String, Object> getRequestBody() {
         return CastUtils.cast(getDetails(), AuditAuthenticationDetails.class).getRequestBody();
-    }
+    }*/
 
     /**
      * 获取附加元数据信息

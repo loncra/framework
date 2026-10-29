@@ -37,17 +37,17 @@ public class AuditAuthenticationDetailsSource extends WebAuthenticationDetailsSo
         if (StringUtils.isEmpty(type)) {
             type = Objects.toString(context.getHeader(authenticationProperties.getTypeHeaderName()), StringUtils.EMPTY);
         }
-        byte[] bodyBytes = SystemException.convertSupplier(() -> context.getInputStream().readAllBytes());
+        /*byte[] bodyBytes = SystemException.convertSupplier(() -> context.getInputStream().readAllBytes());
         Map<String, Object> body = new LinkedHashMap<>();
         if (ArrayUtils.isNotEmpty(bodyBytes)) {
             body = SystemException.convertSupplier(() -> CastUtils.getObjectMapper().readValue(bodyBytes, CastUtils.MAP_TYPE_REFERENCE));
-        }
+        }*/
         return new AuditAuthenticationDetails(
                 webAuthenticationDetails,
                 type,
                 HttpRequestParameterMapUtils.castMapToMultiValueMap(context.getParameterMap()),
-                servletServerHttpRequest.getHeaders(),
-                body
+                servletServerHttpRequest.getHeaders()/*,
+                body*/
         );
     }
 }

@@ -32,20 +32,20 @@ public class AuditAuthenticationDetails extends WebAuthenticationDetails impleme
      */
     private final MultiValueMap<String, String> requestHeaders;
 
-    private final Map<String, Object> requestBody;
+    /*private final Map<String, Object> requestBody;*/
 
     public AuditAuthenticationDetails(
             WebAuthenticationDetails webAuthenticationDetails,
             String type,
             MultiValueMap<String, String> requestParameters,
-            MultiValueMap<String, String> requestHeaders,
-            Map<String, Object> requestBody
+            MultiValueMap<String, String> requestHeaders/*,
+            Map<String, Object> requestBody*/
     ) {
         super(webAuthenticationDetails.getRemoteAddress(), webAuthenticationDetails.getSessionId());
         this.type = type;
         this.requestParameters = requestParameters;
         this.requestHeaders = requestHeaders;
-        this.requestBody = requestBody;
+        /*this.requestBody = requestBody;*/
     }
 
     /**
@@ -80,7 +80,7 @@ public class AuditAuthenticationDetails extends WebAuthenticationDetails impleme
      *
      * @return 请求体信息
      */
-    public Map<String, Object> getRequestBody() {
+    /*public Map<String, Object> getRequestBody() {
         return requestBody;
-    }
+    }*/
 }
