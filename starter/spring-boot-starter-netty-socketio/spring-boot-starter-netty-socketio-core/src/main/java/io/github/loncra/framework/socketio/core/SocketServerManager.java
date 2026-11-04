@@ -168,6 +168,8 @@ public class SocketServerManager implements AuthorizationListener, ConnectListen
 
         optional.ifPresent(s -> s.onConnect(client, socketToken));
 
+        saveSocketAuditAuthenticationToken(socketToken);
+
         if (!LOGGER.isDebugEnabled()) {
             return ;
         }
@@ -379,6 +381,7 @@ public class SocketServerManager implements AuthorizationListener, ConnectListen
      * @param token 认证信息
      */
     public void saveSocketAuditAuthenticationToken(AuditAuthenticationToken token) {
+        SystemException.isTrue(SocketPrincipal.class.isAssignableFrom(token.getPrincipal().getClass()),"认证 token 非 SocketPrincipal 对象，无法保存");
         SocketPrincipal principal = CastUtils.cast(token.getPrincipal(), SocketPrincipal.class);
         String key = socketProperties.getUserCache().getName(principal.getDeviceIdentified());
         RBucket<AuditAuthenticationToken> bucket = redissonClient.getBucket(key);

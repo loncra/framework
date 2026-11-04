@@ -67,7 +67,7 @@ public interface AckMessageSenderResolver<T> extends MessageSenderResolver {
 
         Object timeoutObject = socketMessage.getMetadata()
                 .computeIfAbsent(TimeProperties.class.getName(), k -> config.getAckSendMessageTimeout());
-        TimeProperties timeout = CastUtils.cast(timeoutObject);
+        TimeProperties timeout = CastUtils.convertValue(timeoutObject, TimeProperties.class);
 
         String json = postMessageToJson(socketMessage.getEvent(), socketMessage.getMessage(), config);
         ClientAckCallback callback = new ClientAckCallback(Object.class, Objects.toString(client.getSessionId()), (int)timeout.toSeconds());
