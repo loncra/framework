@@ -15,6 +15,7 @@ import io.github.loncra.framework.commons.jackson.serializer.NameValueEnumSerial
 import io.github.loncra.framework.commons.jackson.serializer.ValueEnumSerializer;
 import io.github.loncra.framework.idempotent.exception.IdempotentException;
 import io.github.loncra.framework.spring.web.config.SpringWebMvcProperties;
+import io.github.loncra.framework.spring.web.converter.NameValueEnumConverter;
 import io.github.loncra.framework.spring.web.device.DeviceResolverRequestFilter;
 import io.github.loncra.framework.spring.web.endpoint.EnumerateEndpoint;
 import io.github.loncra.framework.spring.web.interceptor.CustomClientHttpRequestInterceptor;
@@ -129,6 +130,11 @@ public class SpringWebMvcAutoConfiguration {
     @Bean
     public BindingResultErrorResultResolver bindingResultErrorResultResolver() {
         return new BindingResultErrorResultResolver();
+    }
+
+    @Bean
+    public NameValueEnumConverter nameValueEnumConverter() {
+        return new NameValueEnumConverter();
     }
 
     /**
