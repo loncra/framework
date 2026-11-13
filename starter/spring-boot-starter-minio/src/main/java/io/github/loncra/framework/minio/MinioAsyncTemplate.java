@@ -9,6 +9,8 @@ import io.github.loncra.framework.commons.exception.SystemException;
 import io.github.loncra.framework.commons.minio.*;
 import io.github.loncra.framework.minio.config.MinioProperties;
 import io.minio.*;
+import io.minio.errors.ErrorResponseException;
+import io.minio.errors.InsufficientDataException;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import io.minio.messages.Part;
@@ -27,8 +29,11 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -62,6 +67,8 @@ public class MinioAsyncTemplate extends ConsoleApiMinioAsyncClient {
      * 上传者 id
      */
     public static final String UPLOADER_ID = "uploader-id";
+
+    public static final String NO_SUCH_KEY = "NoSuchKey";
 
     /**
      * AMZ 元数据上传者 id
@@ -297,6 +304,15 @@ public class MinioAsyncTemplate extends ConsoleApiMinioAsyncClient {
      * @return 输入流
      */
     public CompletableFuture<GetObjectResponse> getObject(FileObject fileObject) {
+        return getObject(fileObject, false);
+    }
+
+    /**
+     * 获取文件
+     *
+     * @return 输入流
+     */
+    public CompletableFuture<GetObjectResponse> getObject(FileObject fileObject, boolean ifNoSuchReturnEmptyResponse) {
         ObjectVersionArgs.Builder<GetObjectArgs.Builder, GetObjectArgs> getObjectArgs = GetObjectArgs
                 .builder()
                 .bucket(fileObject.getBucketName().toLowerCase())
@@ -310,7 +326,70 @@ public class MinioAsyncTemplate extends ConsoleApiMinioAsyncClient {
             getObjectArgs.versionId(version.getVersionId());
         }
 
-        return SystemException.convertSupplier(() -> getObject(getObjectArgs.build()), "[minio async template] getObject error");
+        GetObjectArgs args = getObjectArgs.build();
+
+        CompletableFuture<GetObjectResponse> completableFuture = SystemException.convertSupplier(
+                () -> getObject(args),
+                "[minio async template] getObject error"
+        );
+        if (ifNoSuchReturnEmptyResponse && Objects.nonNull(completableFuture)) {
+            return completableFuture
+                    .exceptionally(error -> {
+                        Throwable cause = Objects.nonNull(error.getCause()) ? error.getCause() : error;
+                        if (cause instanceof ErrorResponseException err && NO_SUCH_KEY.equals(err.errorResponse().code())) {
+                            return emptyGetObjectResponse(args);
+                        }
+                        throw error instanceof RuntimeException runtimeError
+                                ? runtimeError
+                                : new CompletionException(error);
+                    });
+        }
+        return completableFuture;
+    }
+
+    private GetObjectResponse emptyGetObjectResponse(GetObjectArgs args) {
+        return new GetObjectResponse(
+                okhttp3.Headers.of(Map.of()),
+                args.bucket(),
+                args.region(),
+                args.object(),
+                new ByteArrayInputStream(new byte[0])
+        );
+    }
+
+    /**
+     * 判断对象是否存在（S3 HEAD 语义：不存在返回 false）
+     */
+    public boolean objectExists(FileObject fileObject) {
+        ObjectVersionArgs.Builder<StatObjectArgs.Builder, StatObjectArgs> statArgs = StatObjectArgs
+                .builder()
+                .bucket(fileObject.getBucketName().toLowerCase())
+                .region(fileObject.getRegion())
+                .object(fileObject.getObjectName());
+
+        if (VersionFileObject.class.isAssignableFrom(fileObject.getClass())) {
+            VersionFileObject version = CastUtils.cast(fileObject);
+            statArgs.versionId(version.getVersionId());
+        }
+
+        try {
+            statObject(statArgs.build()).get();
+            return true;
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof ErrorResponseException err && NO_SUCH_KEY.equals(err.errorResponse().code())) {
+                return false;
+            }
+            throw e.getCause() instanceof RuntimeException runtimeError
+                    ? runtimeError
+                    : new IllegalStateException("对象存在性检查失败: " + fileObject.getObjectName(), e.getCause());
+        } catch (InsufficientDataException e) {
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("对象存在性检查被中断", e);
+        } catch (Exception e) {
+            throw new IllegalStateException("对象存在性检查失败: " + fileObject.getObjectName(), e);
+        }
     }
 
     /**
@@ -701,12 +780,6 @@ public class MinioAsyncTemplate extends ConsoleApiMinioAsyncClient {
                 );
     }
 
-    /**
-     * 将对象以 json 的格式写入到指定的桶和文件中
-     *
-     * @param fileObject 文件对象描述
-     * @param value      对象值
-     */
     /**
      * 将对象以 JSON 格式写入文件
      *
