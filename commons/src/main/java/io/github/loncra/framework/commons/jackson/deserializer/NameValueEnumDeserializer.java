@@ -99,7 +99,14 @@ public class NameValueEnumDeserializer<T extends NameValueEnum> extends JsonDese
             DeserializationContext ctxt,
             BeanProperty property
     ) {
-        Class<?> targetType = property.getType().getRawClass();
+        Class<?> targetType;
+        if (Objects.nonNull(property)) {
+            targetType = property.getType().getRawClass();
+        } else {
+            JavaType contextualType = ctxt.getContextualType();
+            targetType = Objects.nonNull(contextualType) ? contextualType.getRawClass() : null;
+        }
+
         if (Collection.class.isAssignableFrom(targetType)) {
             JsonCollectionGenericType genericType = property.getAnnotation(JsonCollectionGenericType.class);
             if (Objects.nonNull(genericType)) {
